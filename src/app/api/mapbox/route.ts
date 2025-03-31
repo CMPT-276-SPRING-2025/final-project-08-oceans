@@ -21,6 +21,7 @@ type NavigationRequest = {
   waypoints?: string[];
 };
 
+const cache = new Map<string, any>();
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -44,7 +45,13 @@ export async function GET(request: NextRequest) {
           );
         }
         
+        const cachedResult = cache.get(`geocode:${address}`);
+        if (cachedResult) {
+          return NextResponse.json(cachedResult);
+        }
+        
         const result = await geocodeAddress(address);
+        cache.set(`geocode:${address}`, result);
         return NextResponse.json(result);
       }
       
@@ -63,7 +70,13 @@ export async function GET(request: NextRequest) {
         const waypointsParam = searchParams.get('waypoints');
         const waypoints = waypointsParam ? waypointsParam.split('|') : [];
         
+        const cachedResult = cache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
+        if (cachedResult) {
+          return NextResponse.json(cachedResult);
+        }
+        
         const result = await getDirections(origin, destination, mode, waypoints);
+        cache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
         return NextResponse.json(result);
       }
       
@@ -106,7 +119,16 @@ export async function POST(request: NextRequest) {
         }
         
         const results = await Promise.all(
-          addresses.map(address => geocodeAddress(address))
+          addresses.map(async (address) => {
+            const cachedResult = cache.get(`geocode:${address}`);
+            if (cachedResult) {
+              return cachedResult;
+            }
+            
+            const result = await geocodeAddress(address);
+            cache.set(`geocode:${address}`, result);
+            return result;
+          })
         );
         
         return NextResponse.json({ results });
@@ -122,7 +144,13 @@ export async function POST(request: NextRequest) {
           );
         }
         
+        const cachedResult = cache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
+        if (cachedResult) {
+          return NextResponse.json(cachedResult);
+        }
+        
         const result = await getDirections(origin, destination, mode, waypoints);
+        cache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
         return NextResponse.json(result);
       }
       
