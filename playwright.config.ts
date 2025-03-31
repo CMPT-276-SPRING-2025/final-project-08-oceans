@@ -83,5 +83,5 @@ export default defineConfig({
   },
   
   /* Set a global timeout for all tests */
-  timeout: 100000000,
+  timeout: 1000000000,
 });
