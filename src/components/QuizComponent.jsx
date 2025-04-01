@@ -107,7 +107,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       }
 
       // BIRD / FISH / REPTILE / SMALL PET
-      else if (['bird', 'fish', 'reptile', 'small-furry'].includes(type)) {
+      else if (['bird', 'fish', 'reptile', 'small-pets'].includes(type)) {
         const category =
           type === 'bird' ? 'bird_breeds' :
           type === 'fish' ? 'fish_breeds' :
@@ -170,7 +170,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
   
       const skipKeys = ['tags', 'coat', 'breed', 'good_with',];
   
-      if (['bird', 'fish', 'reptile', 'small-furry'].includes(type)) {
+      if (['bird', 'fish', 'reptile', 'small-pets'].includes(type)) {
         skipKeys.push('age','size');
       }
   
@@ -212,46 +212,43 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     const query = buildQueryFromAnswers();
   
     const petfinderTypeMap = {
-      reptile: 'scales-fins-other',
-      fish: 'scales-fins-other',
-      bird: 'bird',
-      'small-furry': 'small-furry',
-      dog: 'dog',
-      cat: 'cat',
+      reptile: { type: 'scales-fins-other', subType: 'reptile' },
+      fish: { type: 'scales-fins-other', subType: 'fish' },
+      bird: { type: 'bird' },
+      'small-pets': { type: 'small-pets' },
+      dog: { type: 'dog' },
+      cat: { type: 'cat' },
     };
   
-    const actualType = petfinderTypeMap[chosenType] || chosenType;
+    const actualTypeInfo = petfinderTypeMap[chosenType] || { type: chosenType };
+    const { type: actualType, subType } = actualTypeInfo;
+  
     let allPets = [];
   
     try {
-      // Check if query has multiple ages
       if (query.includes('age=')) {
         const ageMatch = query.match(/age=([^&]*)/);
         const ageValues = ageMatch ? ageMatch[1].split(',') : [];
   
-        // If multiple ages, loop through each and fetch pets
         for (const age of ageValues) {
           const modifiedQuery = query.replace(/age=([^&]*)/, `age=${age}`);
-          const res = await fetch(`/pets?type=${actualType}&${modifiedQuery}`);
+          const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${modifiedQuery}`);
           const data = await res.json();
           if (data?.pets?.length) {
             allPets.push(...data.pets);
           }
         }
       } else {
-        const res = await fetch(`/pets?type=${actualType}&${query}`);
+        const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${query}`);
         const data = await res.json();
         if (data?.pets?.length) {
           allPets = data.pets;
         }
       }
   
-      // If still no pets, try relaxed filters
       if (!allPets.length) {
-        console.warn('No exact match. Retrying with relaxed filters...');
         const relaxedQuery = buildRelaxedQuery();
-  
-        const res = await fetch(`/pets?type=${actualType}&${relaxedQuery}`);
+        const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${relaxedQuery}`);
         const data = await res.json();
         if (data?.pets?.length) {
           allPets = data.pets;
@@ -259,10 +256,17 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       }
   
       if (allPets.length) {
-        // Optional: Remove duplicates by pet ID
         const uniquePets = Array.from(new Map(allPets.map(p => [p.id, p])).values());
   
         localStorage.setItem('pets', JSON.stringify(uniquePets));
+        
+        localStorage.setItem('petType', actualType);
+        if (subType) {
+          localStorage.setItem('petSubType', subType);
+        } else {
+          localStorage.removeItem('petSubType');
+        }
+  
         router.push('/results');
       } else {
         alert('Sorry, no matching pets found. Try different preferences.');
@@ -271,7 +275,8 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       console.error('Error fetching pets:', err);
       alert('Something went wrong. Please try again later.');
     }
-  };  
+  };
+  
 
   const question = questions[currentQuestion];
 

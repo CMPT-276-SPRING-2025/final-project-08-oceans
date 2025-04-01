@@ -66,7 +66,7 @@ const genericQuestions = [
 const QuizSmallPets = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-orange-50 p-6">
-      <QuizComponent questions={genericQuestions} type="small-furry"/>
+      <QuizComponent questions={genericQuestions} type="small-pets"/>
     </div>
   );
 };
