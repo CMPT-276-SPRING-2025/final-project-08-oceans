@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { saveToSessionStorage, getFromSessionStorage } from '@/lib/clientStorage';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { useRouter } from 'next/navigation';
 
 type Shelter = {
   id: string;
@@ -35,8 +36,15 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const initialViewRef = useRef<{center: mapboxgl.LngLat | null, zoom: number | null}>({
+    center: null,
+    zoom: null
+  });
+  const activePopupRef = useRef<mapboxgl.Popup | null>(null);
+  const isZoomingRef = useRef<boolean>(false);
+  const router = useRouter();
 
-  // Fetch Mapbox API key
+  // Fetch Mapbox API key and geocode shelter addresses
   useEffect(() => {
     const initializeMap = async () => {
       try {
@@ -69,135 +77,244 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
     initializeMap();
   }, []);
 
-  // Initialize the map only once when mapboxKey is available
+  // Geocode shelter addresses and create map once we have the API key
   useEffect(() => {
-    if (!mapboxKey || !mapContainer.current) return;
+    if (!mapboxKey || !shelters.length || !mapContainer.current) return;
 
-    mapboxgl.accessToken = mapboxKey;
+    const geocodeShelters = async () => {
+      try {
+        // Check if we have geocoded shelters in session storage
+        const cacheKey = `mapbox_geocoded_shelters_${shelters.map(s => s.id).join('_')}`;
+        const cachedShelters = getFromSessionStorage<Shelter[]>(cacheKey);
+        
+        let geocodedShelters: Shelter[];
+        
+        if (cachedShelters) {
+          geocodedShelters = cachedShelters;
+        } else {
+          // Prepare addresses for batch geocoding
+          const addresses = shelters.map(shelter => shelter.location);
+          
+          // Call our Mapbox API to geocode all addresses
+          const response = await fetch('/api/mapbox', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              action: 'geocode',
+              addresses,
+            }),
+          });
+          
+          const data = await response.json();
+          
+          if (!data.results) {
+            throw new Error('Failed to geocode shelter addresses');
+          }
+          
+          // Merge geocoding results with shelter data
+          geocodedShelters = shelters.map((shelter, index) => {
+            const geocodeResult = data.results[index];
+            const feature = geocodeResult?.features?.[0];
+            
+            return {
+              ...shelter,
+              coordinates: feature?.coordinates as [number, number] || undefined,
+            };
+          });
+          
+          // Cache the geocoded shelters
+          saveToSessionStorage(cacheKey, geocodedShelters, 60); // Cache for 60 minutes
+        }
+        
+        // Initialize the map
+        mapboxgl.accessToken = mapboxKey;
+        
+        if (!map.current) {
+          // Find a shelter with coordinates to center the map
+          const centerShelter = geocodedShelters.find(s => s.coordinates);
+          const defaultCenter: [number, number] = centerShelter?.coordinates || [-98.5795, 39.8283]; // US center
+          
+          map.current = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: defaultCenter,
+            zoom: centerShelter ? 10 : 4,
+          });
 
-    if (!map.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v11',
-        center: [-98.5795, 39.8283], // US center
-        zoom: 4,
-      });
+          // Store the initial view for reference (to zoom back out)
+          map.current.once('load', () => {
+            initialViewRef.current = {
+              center: map.current?.getCenter() || null,
+              zoom: map.current?.getZoom() || null
+            };
+            console.log('Initial map view stored:', initialViewRef.current);
+          });
+          
+          // Add navigation controls
+          map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+          
+          // Wait for map to load before adding markers
+          map.current.on('load', () => {
+            // Add markers for shelters with coordinates
+            const validShelters = geocodedShelters.filter(shelter => shelter.coordinates);
+            
+            // Clear existing markers
+            markersRef.current.forEach(marker => marker.remove());
+            markersRef.current = [];
+            
+            // Add markers for each shelter
+            validShelters.forEach(shelter => {
+              if (!shelter.coordinates) return;
+              
+              // Create custom marker element
+              const el = document.createElement('div');
+              el.className = 'shelter-marker';
+              el.style.width = '25px';
+              el.style.height = '25px';
+              el.style.backgroundImage = 'url(https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678111-map-marker-512.png)';
+              el.style.backgroundSize = 'cover';
+              el.style.cursor = 'pointer';
+              
+              // Create popup with shelter info and View button
+              const popupContent = document.createElement('div');
+              popupContent.className = 'popup-content';
+              popupContent.style.maxWidth = '220px';
+              popupContent.innerHTML = `
+                <div>
+                  <h3 style="margin: 0 0 8px; font-size: 16px; font-weight: 600;">${shelter.name}</h3>
+                  <p style="margin: 0 0 5px; font-size: 13px;">${shelter.location}</p>
+                  <p style="margin: 0 0 10px; font-size: 13px;">${shelter.hours || 'Hours not available'}</p>
+                  <button id="view-shelter-${shelter.id}" class="view-shelter-btn" style="background-color: #F26A21; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; width: 100%;">
+                    View Shelter
+                  </button>
+                </div>
+              `;
+              
+              const popup = new mapboxgl.Popup({ 
+                offset: 25,
+                closeButton: true,
+                closeOnClick: false
+              }).setDOMContent(popupContent);
+              
+              // Create and add the marker
+              const marker = new mapboxgl.Marker(el)
+                .setLngLat(shelter.coordinates)
+                .setPopup(popup)
+                .addTo(map.current!);
+              
+              // Store marker reference for cleanup
+              markersRef.current.push(marker);
+              
+              // Add click event to marker to zoom in and show popup
+              el.addEventListener('click', () => {
+                // If the initial view hasn't been captured yet, do so now
+                if (!initialViewRef.current.center && map.current) {
+                  initialViewRef.current = {
+                    center: map.current.getCenter(),
+                    zoom: map.current.getZoom()
+                  };
+                  console.log('Initial view captured on marker click:', initialViewRef.current);
+                }
+                
+                // Close any existing popup
+                if (activePopupRef.current) {
+                  activePopupRef.current.remove();
+                }
+                
+                // Store this popup as active
+                activePopupRef.current = popup;
+                
+                // Zoom in to marker
+                isZoomingRef.current = true;
+                map.current?.flyTo({
+                  center: shelter.coordinates,
+                  zoom: 15,
+                  essential: true,
+                  duration: 1000
+                });
+                
+                // Show popup after zooming
+                setTimeout(() => {
+                  marker.togglePopup();
+                  isZoomingRef.current = false;
+                }, 1000);
+                
+                // Notify parent component if needed
+                if (onShelterSelect) {
+                  onShelterSelect(shelter.id);
+                }
+              });
+              
+              // Add event listeners for the popup
+              popup.on('open', () => {
+                // Add click handler to view button
+                const viewBtn = document.getElementById(`view-shelter-${shelter.id}`);
+                if (viewBtn) {
+                  viewBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    router.push(`/shelters/${shelter.id}`);
+                  });
+                }
+              });
+              
+              // Add event for when popup is closed to zoom back out
+              popup.on('close', () => {
+                if (isZoomingRef.current) return; // Don't react if we're in the middle of zooming
+                
+                if (initialViewRef.current.center && initialViewRef.current.zoom) {
+                  isZoomingRef.current = true;
+                  console.log('Zooming back out to initial view:', initialViewRef.current);
+                  
+                  map.current?.flyTo({
+                    center: initialViewRef.current.center,
+                    zoom: initialViewRef.current.zoom,
+                    essential: true,
+                    duration: 1000
+                  });
+                  
+                  setTimeout(() => {
+                    isZoomingRef.current = false;
+                    activePopupRef.current = null;
+                  }, 1000);
+                }
+              });
+            });
+            
+            // Fit map to show all markers if we have multiple
+            if (validShelters.length > 1 && map.current) {
+              const bounds = new mapboxgl.LngLatBounds();
+              validShelters.forEach(shelter => {
+                if (shelter.coordinates) {
+                  bounds.extend(shelter.coordinates);
+                }
+              });
+              
+              map.current.fitBounds(bounds, {
+                padding: 50,
+                maxZoom: 15,
+              });
+            }
+          });
+        }
+      } catch (err: any) {
+        console.error('Error geocoding shelters:', err);
+        setError(err.message || 'Failed to geocode shelter addresses');
+      }
+    };
 
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    }
+    geocodeShelters();
 
+    // Cleanup function
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
     };
-  }, [mapboxKey]);
-
-  // Update markers when shelters change
-  useEffect(() => {
-    if (!map.current || !mapboxKey || !shelters.length) return;
-
-    const updateMarkers = async () => {
-      try {
-        // Geocode shelters
-        const addresses = shelters.map(shelter => shelter.location);
-
-        const response = await fetch('/api/mapbox', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'geocode',
-            addresses,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!data.results) {
-          throw new Error('Failed to geocode shelter addresses');
-        }
-
-        const geocodedShelters = shelters.map((shelter, index) => {
-          const geocodeResult = data.results[index];
-          const feature = geocodeResult?.features?.[0];
-
-          return {
-            ...shelter,
-            coordinates: feature?.coordinates as [number, number] || undefined,
-          };
-        });
-
-        // Clear existing markers
-        markersRef.current.forEach(marker => marker.remove());
-        markersRef.current = [];
-
-        // Add markers for shelters with coordinates
-        const validShelters = geocodedShelters.filter(shelter => shelter.coordinates);
-
-        validShelters.forEach(shelter => {
-          if (!shelter.coordinates) return;
-
-          // Create custom marker element
-          const el = document.createElement('div');
-          el.className = 'shelter-marker';
-          el.style.width = '25px';
-          el.style.height = '25px';
-          el.style.backgroundImage = 'url(https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678111-map-marker-512.png)';
-          el.style.backgroundSize = 'cover';
-          el.style.cursor = 'pointer';
-
-          // Create popup with shelter info
-          const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-            <div style="max-width: 200px;">
-              <h3 style="margin: 0 0 5px; font-size: 16px;">${shelter.name}</h3>
-              <p style="margin: 0 0 3px; font-size: 12px;">${shelter.location}</p>
-              <p style="margin: 0 0 3px; font-size: 12px;">${shelter.contact}</p>
-              ${shelter.website ? `<a href="${shelter.website}" target="_blank" style="font-size: 12px;">Visit Website</a>` : ''}
-            </div>
-          `);
-
-          // Create and add the marker
-          const marker = new mapboxgl.Marker(el)
-            .setLngLat(shelter.coordinates)
-            .setPopup(popup)
-            .addTo(map.current!);
-
-          // Add click event to marker
-          el.addEventListener('click', () => {
-            if (onShelterSelect) {
-              onShelterSelect(shelter.id);
-            }
-          });
-
-          // Store marker reference for cleanup
-          markersRef.current.push(marker);
-        });
-
-        // Fit map to show all markers if we have multiple
-        if (validShelters.length > 1 && map.current) {
-          const bounds = new mapboxgl.LngLatBounds();
-          validShelters.forEach(shelter => {
-            if (shelter.coordinates) {
-              bounds.extend(shelter.coordinates);
-            }
-          });
-
-          map.current.fitBounds(bounds, {
-            padding: 50,
-            maxZoom: 15,
-          });
-        }
-      } catch (err: any) {
-        console.error('Error updating markers:', err);
-        setError(err.message || 'Failed to update markers');
-      }
-    };
-
-    updateMarkers();
-  }, [shelters, mapboxKey, onShelterSelect]);
+  }, [mapboxKey, shelters, onShelterSelect, router]);
 
   return (
     <div className="relative w-full h-full">
