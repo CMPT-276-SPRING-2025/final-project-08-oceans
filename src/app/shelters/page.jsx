@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { saveToSessionStorage, getFromSessionStorage, generateCacheKey } from '@/lib/clientStorage';
 import { LoadingBar } from '@/components/ui/loading-bar';
 import { useRouter } from 'next/navigation';
+import ShelterMap from '@/components/map/ShelterMap';
 
 const Shelters = () => {
   const router = useRouter();
@@ -21,6 +22,7 @@ const Shelters = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("Loading shelters...");
   const [isNavigating, setIsNavigating] = useState(false);
+  const [selectedShelterId, setSelectedShelterId] = useState(null);
 
   useEffect(() => {
     let timer;
@@ -167,6 +169,22 @@ const Shelters = () => {
     }, 600);
   };
 
+  const handleShelterSelect = (shelterId) => {
+    setSelectedShelterId(shelterId);
+    
+    // Scroll to the selected shelter card
+    const shelterCard = document.getElementById(`shelter-${shelterId}`);
+    if (shelterCard) {
+      shelterCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Highlight the card
+      shelterCard.classList.add('ring-2', 'ring-orange-500');
+      setTimeout(() => {
+        shelterCard.classList.remove('ring-2', 'ring-orange-500');
+      }, 2000);
+    }
+  };
+
   return (
     <div className="w-full mx-auto p-20 pt-[100px] 2xl:pt-[150px]">
       <LoadingBar 
@@ -205,12 +223,18 @@ const Shelters = () => {
 
       {/* Interactive Map */}
       <div 
-        className="w-full h-64 bg-gray-200 rounded-lg mt-6 overflow-hidden shadow-lg"
+        className="w-full h-96 bg-gray-200 rounded-lg mt-6 overflow-hidden shadow-lg"
         >
-        {/* Replace this div with map integration */}
-        <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-600">
-          Interactive Map Here
-        </div>
+        {!loading && shelters.length > 0 ? (
+          <ShelterMap 
+            shelters={shelters} 
+            onShelterSelect={handleShelterSelect}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-600">
+            {loading ? "Loading map..." : "No shelters to display on map"}
+          </div>
+        )}
       </div>
 
       {/* Results Section */}
@@ -229,8 +253,9 @@ const Shelters = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mt-6">
           {shelters.map((shelter) => (
             <div 
-              key={shelter.id} 
-              className='flex flex-col hover:shadow-xl h-fit hover:scale-105 transition duration-400 rounded-2xl'
+              key={shelter.id}
+              id={`shelter-${shelter.id}`}
+              className={`flex flex-col hover:shadow-xl h-fit hover:scale-105 transition duration-400 rounded-2xl ${selectedShelterId === shelter.id ? 'ring-2 ring-orange-500' : ''}`}
             >
               <Card className="flex bg-orange-100 p-4 rounded-2xl shadow-md ">
                 <div className="flex items-center gap-2">
