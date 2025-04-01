@@ -2,6 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import { assets } from '@/assets/assets';
 import Link from 'next/link';
+import ShelterDetailMapWrapper from '@/components/map/ShelterDetailMapWrapper';
 
 async function getShelter(id) {
   try {
@@ -114,11 +115,9 @@ export default async function ShelterDetail({ params }) {
   
       <hr className="border-t border-gray-300" />
   
-      {/* Map Placeholder */}
+      {/* Interactive Map */}
       <div className="w-full h-96 rounded-lg overflow-hidden shadow">
-        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-lg">
-          Loading map...
-        </div>
+        <ShelterDetailMapWrapper shelter={shelter} />
       </div>
     </div>
   );
