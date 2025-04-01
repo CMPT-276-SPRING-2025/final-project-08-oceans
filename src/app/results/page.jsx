@@ -81,14 +81,14 @@ const ResultsPage = () => {
                 />
               </CardHeader>
 
-              <CardContent className="text-center">
+              CardContent className="text-center">
                 <h3 className="text-xl font-semibold">{pet.name}</h3>
                 <ul className="text-md text-gray-700 mt-2 space-y-1">
-                  <li> {pet.breed || 'Unknown'}</li>
-                  <li> {pet.age} • {pet.gender} </li>
+                  <li> {pet.breed} </li>
+                  <li> {pet.age} • {pet.gender}</li>
                 </ul>
               </CardContent>
-
+          
               <CardFooter className="flex justify-center mb-2">
                 <Button
                   className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-6 text-md"
