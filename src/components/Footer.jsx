@@ -21,7 +21,6 @@ const Footer = () => {
               <h3 className="font-bold">Company</h3>
               <ul className="mt-2 space-y-1 text-gray-700">
                 <li><a href="/" className="hover:underline">About us</a></li>
-                <li><a href="#" className="hover:underline">FAQ</a></li>
                 <li><a href="/contact" className="hover:underline">Contact</a></li>
               </ul>
             </div>
@@ -30,9 +29,21 @@ const Footer = () => {
             <div className="text-center md:text-left text-sm">
               <h3 className="font-bold">Legal</h3>
               <ul className="mt-2 space-y-1 text-gray-700">
-                <li><a href="#" className="hover:underline">Privacy Policy</a></li>
-                <li><a href="#" className="hover:underline">Terms & Conditions</a></li>
-                <li><a href="#" className="hover:underline">Cookie Policy</a></li>
+                <li>
+                  <a href="https://www.termsfeed.com/live/3d901eaa-51d3-4f03-869c-50e2d6fd30fc"
+                  target="_blank"
+                  rel="noopener noreferrer" 
+                  className="hover:underline"
+                  >Privacy Policy</a>
+                </li>
+                <li>
+                  <a href="https://www.termsfeed.com/live/52bbee96-9a9a-48ed-bfa6-6566eabfe6ae" 
+                  className="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >
+                    Terms & Conditions</a>
+                </li>
               </ul>
             </div>
 
@@ -40,8 +51,21 @@ const Footer = () => {
             <div className="text-center md:text-left lg:mb-[10px]">
               <h3 className="font-bold">Social</h3>
               <div className="mt-[5px] flex space-x-4 justify-center md:justify-start mb-10">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Image src={assets.instagram} alt="Instagram" width={24} height={24} />
+              </a>
+
+              <a
+                href="https://twitter.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Image src={assets.twitter} alt="Twitter" width={24} height={24} />
+              </a>
               </div>
             </div>
           </div>
