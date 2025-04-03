@@ -69,31 +69,44 @@ const ResultsPage = () => {
           {pets.map((pet) => (
             <Card
               key={pet.id}
-              className="shadow-md hover:shadow-lg transition duration-300 rounded-xl bg-orange-50"
+              className="rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition py-3 duration-600 bg-orange-50"
             >
-              <CardHeader className="flex justify-center p-4">
+              <CardHeader className="relative h-40 w-full mb-3 flex justify-center mt-4">
                 <img
                   src={pet.photos?.[0]?.medium || 'https://via.placeholder.com/300x300?text=No+Image'}
                   alt={pet.name}
-                  className="w-40 h-40 object-cover rounded-lg"
+                  width={180}
+                  height={180}
+                  className="h-full object-cover rounded-lg"
                 />
               </CardHeader>
 
               <CardContent className="text-center">
                 <h3 className="text-xl font-semibold">{pet.name}</h3>
-                <ul className="text-sm text-gray-700 mt-2 space-y-1">
-                  <li>• Breed: {pet.breed || 'Unknown'}</li>
-                  <li>• Age: {pet.age}</li>
-                  <li>• Gender: {pet.gender}</li>
-                  <li>• Size: {pet.size}</li>
+
+                <ul className="text-md text-gray-700 mt-2 space-y-1">
+                  <li> {pet.breed} </li>
+                  <li> {pet.age} • {pet.gender}</li>
                 </ul>
               </CardContent>
 
-              <CardFooter className="flex justify-center p-4">
+
+              <CardFooter className="flex justify-center mb-2">
+ 
+
                 <Button
-                  className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-6 py-2 text-md"
-                  onClick={() => window.open(`https://www.petfinder.com/search/pets-for-adoption/?pet_id=${pet.id}`, '_blank')}
-                >
+ 
+
+                  className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-6 text-md"
+                  onClick={() => {
+                    // Optional: store filters if you want them available on details page
+                    localStorage.setItem('petFilters', JSON.stringify({
+                      type: localStorage.getItem('petType') || '',
+                      subType: localStorage.getItem('petSubType') || ''
+                    }));
+                    router.push(`/pets/${pet.id}`);
+                  }}
+                  >
                   Adopt me!
                 </Button>
               </CardFooter>
