@@ -1,16 +1,14 @@
 'use client'
 
-import { assets } from '@/assets/assets'
-import Image from 'next/image'
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import Link from 'next/link';
 import { saveToSessionStorage, getFromSessionStorage, generateCacheKey } from '@/lib/clientStorage';
 import { LoadingBar } from '@/components/ui/loading-bar';
 import { useRouter } from 'next/navigation';
 import ShelterMap from '@/components/map/ShelterMap';
+import { LocationSearchInput } from "@/components/ui/locationSeachInput";
 
 const Shelters = () => {
   const router = useRouter();
@@ -198,12 +196,11 @@ const Shelters = () => {
         <h2 className="text-2xl font-semibold">Search nearby pet shelters</h2>
         <div className="flex w-full max-w-2xl gap-3">
             {/* By location search */}
-          <Input 
-            placeholder="Location" 
-            className="flex-1 bg-white border border-orange-400 hover:border-2" 
-            value={locationSearch}
-            onChange={(e) => setLocationSearch(e.target.value)}
-          />
+            <LocationSearchInput
+              placeholder="Location"
+              value={locationSearch}
+              onChange={(e) => setLocationSearch(e.target.value)}
+            />
           <span className="self-center">or</span>
           {/* By shelter name search */}
           <Input 
@@ -213,7 +210,7 @@ const Shelters = () => {
             onChange={(e) => setNameSearch(e.target.value)}
           />
           <Button 
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 text-lg rounded-2xl"
+            className="ml-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline"
             onClick={handleSearch}
           >
             Search

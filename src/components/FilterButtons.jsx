@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { LocationSearchInput } from './ui/locationSeachInput';
 
 const FilterButtons = () => {
   const router = useRouter();
@@ -40,11 +40,10 @@ const FilterButtons = () => {
 
   const handleSearch = (event) => {
     event.preventDefault();
-    const locationValue = document.getElementById('location').value.trim();
     const newParams = new URLSearchParams(searchParams.toString());
 
-    if (locationValue) {
-      newParams.set('location', locationValue);
+    if (tempLocation) {
+      newParams.set('location', tempLocation);
     } else {
       newParams.delete('location');
     }
@@ -52,57 +51,59 @@ const FilterButtons = () => {
   };
 
   return (
-    <div className="flex justify-center gap-2 mb-8 flex-wrap">
-      <button
-        className={`px-4 py-2 rounded-full ${currentType === 'all' || !currentType ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
-        onClick={() => handleFilterClick('all')}
-      >
-        All
-      </button>
-      <button
-        className={`px-4 py-2 rounded-full ${currentType === 'cat' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
-        onClick={() => handleFilterClick('cat')}
-      >
-        Cats
-      </button>
-      <button
-        className={`px-4 py-2 rounded-full ${currentType === 'dog' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
-        onClick={() => handleFilterClick('dog')}
-      >
-        Dogs
-      </button>
-      <button
-        className={`px-4 py-2 rounded-full ${currentType === 'bird' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
-        onClick={() => handleFilterClick('bird')}
-      >
-        Birds
-      </button>
-      <button
-        className={`px-4 py-2 rounded-full ${currentType === 'small-pets' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
-        onClick={() => handleFilterClick('small-pets')}
-      >
-        Small Pets
-      </button>
-      <button
-        className={`px-4 py-2 rounded-full ${currentType === 'scales-fins-other' && currentSubType === 'reptile' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
-        onClick={() => handleFilterClick('scales-fins-other?subType=reptile')}
-      >
-        Reptiles
-      </button>
-      <button
-        className={`px-4 py-2 rounded-full ${currentType === 'scales-fins-other' && currentSubType === 'fish' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
-        onClick={() => handleFilterClick('scales-fins-other?subType=fish')}
-      >
-        Fish
-      </button>
-      
-      <div className="flex items-center justify-center w-full">
-        <Input
-          type="text"
-          id="location"
-          className="shadow appearance-none border rounded-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-[450px]"
-          placeholder="Enter location"
+    <div className="flex flex-col items-center gap-2 mb-8">
+      {/* Filter Buttons */}
+      <div className="flex justify-start gap-2 flex-wrap">
+        <button
+          className={`px-4 py-2 rounded-full ${currentType === 'all' || !currentType ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
+          onClick={() => handleFilterClick('all')}
+        >
+          All
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full ${currentType === 'cat' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
+          onClick={() => handleFilterClick('cat')}
+        >
+          Cats
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full ${currentType === 'dog' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
+          onClick={() => handleFilterClick('dog')}
+        >
+          Dogs
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full ${currentType === 'bird' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
+          onClick={() => handleFilterClick('bird')}
+        >
+          Birds
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full ${currentType === 'small-pets' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
+          onClick={() => handleFilterClick('small-pets')}
+        >
+          Small Pets
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full ${currentType === 'scales-fins-other' && currentSubType === 'reptile' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
+          onClick={() => handleFilterClick('scales-fins-other?subType=reptile')}
+        >
+          Reptiles
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full ${currentType === 'scales-fins-other' && currentSubType === 'fish' ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
+          onClick={() => handleFilterClick('scales-fins-other?subType=fish')}
+        >
+          Fish
+        </button>
+      </div>
+
+      {/* Location Search Input */}
+      <div className="flex items-center justify-center">
+        <LocationSearchInput
+          value={tempLocation}
           onChange={handleLocationInputChange}
+          className={"w-[450px]"}
         />
         <Button
           className="ml-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline"

@@ -58,7 +58,7 @@ const ResultsPage = () => {
       <div className="mb-8">
         <Button
           className="bg-orange-500 hover:bg-orange-600 text-white text-lg rounded-full shadow-xl px-8 py-3"
-          onClick={() => window.location.href = '/'}
+          onClick={() => window.location.href = '/quiz'}
         >
           Retake Quiz
         </Button>
