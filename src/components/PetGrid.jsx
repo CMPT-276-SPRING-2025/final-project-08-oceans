@@ -1,8 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 const PetGrid = ({ pets, goToDetailPage}) => {
   if (!pets || !Array.isArray(pets) || pets.length === 0) {
