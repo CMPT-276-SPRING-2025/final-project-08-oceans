@@ -12,7 +12,7 @@ const LocationSearchInput = ({ value, onChange, className }) => {
 
   return (
     <Input
-      placeholder="Location"
+      placeholder="Location: 'City, State Initials' / Zip Code"
       className={inputClassName}
       value={value}
       onChange={onChange}
