@@ -104,6 +104,11 @@ export async function GET(request: Request) {
     const page = searchParams.get('page') || '1';
     const limit = searchParams.get('limit') || '100';
     const location = searchParams.get('location') || undefined;
+    const size = searchParams.get('size') || undefined;
+    const coat = searchParams.get('coat') || undefined;
+    const good_with_children = searchParams.get('good_with_children') || undefined;
+    const good_with_dogs = searchParams.get('good_with_dogs') || undefined;
+    const good_with_cats = searchParams.get('good_with_cats') || undefined;
 
     let animals: PetfinderPet[] = [];
     let pagination = {
@@ -267,6 +272,12 @@ export async function GET(request: Request) {
         if (type) queryParams.append('type', type);
         if (breed) queryParams.append('breed', breed);
         if (age) queryParams.append('age', age);
+        if (size) queryParams.append('size', size);
+        if (coat) queryParams.append('coat', coat);
+        if (good_with_children) queryParams.append('good_with_children', good_with_children);
+        if (good_with_dogs) queryParams.append('good_with_dogs', good_with_dogs);
+        if (good_with_cats) queryParams.append('good_with_cats', good_with_cats);
+
         queryParams.append('page', page);
         queryParams.append('limit', limit);
 
