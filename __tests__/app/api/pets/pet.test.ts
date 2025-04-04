@@ -13,11 +13,13 @@ console.error = jest.fn();
 
 global.fetch = jest.fn();
 
-const mockFetch = (response: any, ok = true) => {
+// Updated mockFetch to include status
+const mockFetch = (response: any, ok = true, status = 200) => {
   return jest.fn().mockResolvedValueOnce({
     ok,
     json: jest.fn().mockResolvedValueOnce(response),
-    statusText: ok ? 'OK' : 'Error',
+    statusText: ok ? 'OK' : `Error ${status}`, // Include status in statusText for clarity
+    status: ok ? status : status, // Set the status code
   });
 };
 
@@ -427,7 +429,8 @@ describe('Pets API Routes', () => {
         })
       );
 
-      const url = new URL('http://localhost:3000/pets/api/123');
+      // Create a proper URL that will match the route pattern for pets/api/[id]
+      const url = new URL('http://localhost:3000/api/pets/123');
       const request = new Request(url);
       
       const response = await getPetById(request);
@@ -464,19 +467,21 @@ describe('Pets API Routes', () => {
         })
       );
 
+      // Mock pet fetch simulating a 404 Not Found
       (global.fetch as jest.Mock).mockImplementationOnce(
-        mockFetch({ status: 'not found' }, false)
+        mockFetch({ title: 'Not Found', status: 404 }, false, 404) // Pass ok=false and status=404
       );
 
-      const url = new URL('http://localhost:3000/pets/api/999');
+      // Use the correct URL format for the API
+      const url = new URL('http://localhost:3000/api/pets/999');
       const request = new Request(url);
       
       const response = await getPetById(request);
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(404);
       const responseData = await response.json();
       
-      expect(responseData.message).toContain('Failed to process request due to a server error.');
+      expect(responseData.message).toContain('Pet with ID 999 not found');
     });
 
     it('should verify pet has all required characteristics', async () => {
@@ -531,7 +536,8 @@ describe('Pets API Routes', () => {
         })
       );
 
-      const url = new URL('http://localhost:3000/pets/api/456');
+      // Use the correct URL format for the API
+      const url = new URL('http://localhost:3000/api/pets/456');
       const request = new Request(url);
       
       const response = await getPetById(request);

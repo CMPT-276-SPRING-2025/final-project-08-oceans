@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const MAPBOX_BASE_URL = 'https://api.mapbox.com';
 const GEOCODING_ENDPOINT = '/geocoding/v5/mapbox.places';
-const DIRECTIONS_ENDPOINT = '/directions/v5/mapbox';
+const DIRECTIONS_ENDPOINT = '/directions/v5';
 
+// Define valid navigation profiles
 const NAVIGATION_PROFILES = {
-  driving: 'mapbox/driving',
-  walking: 'mapbox/walking',
-  cycling: 'mapbox/cycling',
+  driving: 'driving',
+  walking: 'walking',
+  cycling: 'cycling',
 };
 
 type GeocodeRequest = {
@@ -21,6 +22,7 @@ type NavigationRequest = {
   waypoints?: string[];
 };
 
+// Create a cache to store results
 const cache = new Map<string, any>();
 
 export async function GET(request: NextRequest) {
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
       case 'navigation': {
         const origin = searchParams.get('origin');
         const destination = searchParams.get('destination');
-        const mode = searchParams.get('mode') as 'driving' | 'walking' | 'cycling' || 'driving';
+        const mode = (searchParams.get('mode') as 'driving' | 'walking' | 'cycling') || 'driving';
         
         if (!origin || !destination) {
           return NextResponse.json(
@@ -70,13 +72,14 @@ export async function GET(request: NextRequest) {
         const waypointsParam = searchParams.get('waypoints');
         const waypoints = waypointsParam ? waypointsParam.split('|') : [];
         
-        const cachedResult = cache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
+        const cacheKey = `navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`;
+        const cachedResult = cache.get(cacheKey);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
         
         const result = await getDirections(origin, destination, mode, waypoints);
-        cache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
+        cache.set(cacheKey, result);
         return NextResponse.json(result);
       }
       
@@ -144,13 +147,14 @@ export async function POST(request: NextRequest) {
           );
         }
         
-        const cachedResult = cache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
+        const cacheKey = `navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`;
+        const cachedResult = cache.get(cacheKey);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
         
         const result = await getDirections(origin, destination, mode, waypoints);
-        cache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
+        cache.set(cacheKey, result);
         return NextResponse.json(result);
       }
       
@@ -199,12 +203,12 @@ async function getDirections(
   mode: 'driving' | 'walking' | 'cycling' = 'driving',
   waypoints: string[] = []
 ) {
+  // First geocode all locations to get coordinates
   const originCoords = await geocodeAddress(origin);
   const destinationCoords = await geocodeAddress(destination);
   
-  const waypointCoords = waypoints.length > 0 
-    ? await Promise.all(waypoints.map(wp => geocodeAddress(wp)))
-    : [];
+  const waypointCoordsPromises = waypoints.map(wp => geocodeAddress(wp));
+  const waypointCoords = await Promise.all(waypointCoordsPromises);
   
   const originPoint = originCoords.features[0]?.coordinates;
   const destPoint = destinationCoords.features[0]?.coordinates;
@@ -213,8 +217,10 @@ async function getDirections(
     throw new Error('Could not geocode origin or destination addresses');
   }
   
+  // Construct the coordinates string for the API call
   let coordinatesStr = `${originPoint[0]},${originPoint[1]}`;
   
+  // Add all waypoints
   for (const wp of waypointCoords) {
     const wpPoint = wp.features[0]?.coordinates;
     if (wpPoint) {
@@ -222,9 +228,11 @@ async function getDirections(
     }
   }
   
+  // Add destination at the end
   coordinatesStr += `;${destPoint[0]},${destPoint[1]}`;
   
-  const profile = NAVIGATION_PROFILES[mode] || NAVIGATION_PROFILES.driving;
+  // Use the correct profile format for Mapbox Directions API
+  const profile = `mapbox/${NAVIGATION_PROFILES[mode] || 'driving'}`;
   
   const url = `${MAPBOX_BASE_URL}${DIRECTIONS_ENDPOINT}/${profile}/${coordinatesStr}?alternatives=true&geometries=geojson&overview=full&steps=true&access_token=${process.env.MAPBOX_KEY}`;
   
@@ -236,6 +244,7 @@ async function getDirections(
   
   const data = await response.json();
   
+  // Format the response in a way that matches test expectations
   return {
     routes: data.routes.map((route: any) => ({
       distance: route.distance,
