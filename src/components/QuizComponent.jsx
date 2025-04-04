@@ -210,6 +210,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     }
   
     const query = buildQueryFromAnswers();
+    let relaxedQuery = null;
   
     const petfinderTypeMap = {
       reptile: { type: 'scales-fins-other', subType: 'reptile' },
@@ -247,7 +248,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       }
   
       if (!allPets.length) {
-        const relaxedQuery = buildRelaxedQuery();
+        relaxedQuery = buildRelaxedQuery();
         const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${relaxedQuery}`);
         const data = await res.json();
         if (data?.pets?.length) {
@@ -266,7 +267,8 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         } else {
           localStorage.removeItem('petSubType');
         }
-  
+
+        localStorage.setItem('quizQuery', relaxedQuery || query);
         router.push('/results');
       } else {
         alert('Sorry, no matching pets found. Try different preferences.');

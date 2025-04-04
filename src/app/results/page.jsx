@@ -4,13 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { LocationSearchInput } from '@/components/ui/locationSeachInput';
 
 const ResultsPage = () => {
   const [pets, setPets] = useState([]);
   const [fallbackMessage, setFallbackMessage] = useState('');
   const [pageTitle, setPageTitle] = useState('Your Perfect Pet Awaits! 🐾');
+  const [location, setLocation] = useState(''); // New state for location filter
   const router = useRouter();
 
+  // Initial loading from localStorage (pets, petType, petSubType, etc.)
   useEffect(() => {
     const storedPets = localStorage.getItem('pets');
     const fallback = localStorage.getItem('fallbackMessage');
@@ -32,7 +35,7 @@ const ResultsPage = () => {
       setFallbackMessage(fallback);
     }
 
-    //  Dynamic title logic
+    // Dynamic title logic
     if (petType === 'scales-fins-other' && petSubType === 'fish') {
       setPageTitle('Fish Available for Adoption🐟');
     } else if (petType === 'scales-fins-other' && petSubType === 'reptile') {
@@ -48,6 +51,38 @@ const ResultsPage = () => {
     }
   }, []);
 
+  // New function to search pets by location and quiz filters
+  const handleLocationSearch = async () => {
+    const petType = localStorage.getItem('petType');
+    const petSubType = localStorage.getItem('petSubType');
+    // Retrieve stored quiz query filters
+    const quizQuery = localStorage.getItem('quizQuery') || '';
+
+    // Build the URL by merging quiz filters with the location filter
+    let url = `/pets?${quizQuery}+&type=${petType}`;
+    if (petSubType) {
+      url += `&subType=${petSubType}`;
+    }
+    if (location) {
+      url += `&location=${encodeURIComponent(location)}`;
+    }
+    
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data?.pets?.length) {
+        setPets(data.pets);
+        setFallbackMessage('');
+      } else {
+        setPets([]);
+        setFallbackMessage('No pets found for this location. Try a different location.');
+      }
+    } catch (err) {
+      console.error('Error fetching pets by location:', err);
+      setFallbackMessage('Something went wrong. Please try again later.');
+    }
+  };
+
   return (
     <div className="w-full text-center min-h-screen pt-28 px-10">
       <h2 className="text-3xl font-semibold mb-4">{pageTitle}</h2>
@@ -55,12 +90,28 @@ const ResultsPage = () => {
       {fallbackMessage && (
         <p className="text-orange-500 text-lg mb-6 font-medium">{fallbackMessage}</p>
       )}
+      
       <div className="mb-8">
         <Button
           className="bg-orange-500 hover:bg-orange-600 text-white text-lg rounded-full shadow-xl px-8 py-3"
           onClick={() => window.location.href = '/quiz'}
         >
           Retake Quiz
+        </Button>
+      </div>
+
+        {/* Location filter input and search button */}
+      <div className="mb-8 flex justify-center gap-4">
+        <LocationSearchInput
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="!max-w-[400px]"
+        />
+        <Button
+          className="bg-orange-500 hover:bg-orange-600 text-white text-lg rounded-full shadow-xl px-8 py-3"
+          onClick={handleLocationSearch}
+        >
+          Search
         </Button>
       </div>
 
@@ -83,20 +134,14 @@ const ResultsPage = () => {
 
               <CardContent className="text-center">
                 <h3 className="text-xl font-semibold">{pet.name}</h3>
-
                 <ul className="text-md text-gray-700 mt-2 space-y-1">
-                  <li> {pet.breed} </li>
-                  <li> {pet.age} • {pet.gender}</li>
+                  <li>{pet.breed}</li>
+                  <li>{pet.age} • {pet.gender}</li>
                 </ul>
               </CardContent>
 
-
               <CardFooter className="flex justify-center mb-2">
- 
-
                 <Button
- 
-
                   className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-6 text-md"
                   onClick={() => {
                     // Optional: store filters if you want them available on details page
@@ -106,7 +151,7 @@ const ResultsPage = () => {
                     }));
                     router.push(`/pets/${pet.id}`);
                   }}
-                  >
+                >
                   Adopt me!
                 </Button>
               </CardFooter>
@@ -116,7 +161,6 @@ const ResultsPage = () => {
       ) : (
         <p className="text-gray-500 mt-10">No pets found. Try retaking the quiz.</p>
       )}
-
     </div>
   );
 };
