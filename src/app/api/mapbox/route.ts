@@ -263,3 +263,5 @@ async function getDirections(
     mode,
   };
 }
+
+export { cache };
