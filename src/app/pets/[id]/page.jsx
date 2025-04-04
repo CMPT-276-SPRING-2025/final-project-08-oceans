@@ -7,14 +7,17 @@ import { useRouter } from 'next/navigation';
 import { assets } from '@/assets/assets';
 import { saveToSessionStorage, getFromSessionStorage } from '@/lib/clientStorage';
 import { LoadingBar } from '@/components/ui/loading-bar';
+import { Button } from '@/components/ui/button';
+import { decode } from 'punycode';
 
-export default function PetDetailPage({ params }) {
+export default function PetDetailPage({ params, searchParams }) {
   const { id } = use(params);
   const [pet, setPet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const router = useRouter();
+  const searchParamsValue = use(searchParams);
 
   const nextImage = () => {
     if (pet?.photos?.length > 1) {  // Changed from just length check to length > 1
@@ -35,7 +38,15 @@ export default function PetDetailPage({ params }) {
   const handleAdoptClick = (organizationId) => {
     // Show loading when initiating the adoption process
     setLoading(true);
-    router.push(`/shelters/${organizationId}`);
+
+    // Construct the back URL with the current page's URL
+    const backUrl = encodeURIComponent(window.location.pathname + window.location.search); 
+    router.push(`/shelters/${organizationId}?backUrl=${backUrl}`);
+  };
+        
+  const handleGoBack = () => {
+
+    router.push(decodeURIComponent(searchParamsValue.backURL))
   };
 
   useEffect(() => {
@@ -77,10 +88,13 @@ export default function PetDetailPage({ params }) {
         isLoading={loading}
         message={loading ? "Loading Pet Details..." : ""}
       />
-      
-      <Link href="/pets_all" className="inline-block mb-6 text-blue-500 hover:underline">
-        &larr; Back to all pets
-      </Link>
+
+      <Button
+          className="ml-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline"
+          onClick={handleGoBack}
+      >
+          Back to pets
+      </Button>
       
       {error ? (
         <div className="min-h-[60vh] flex flex-col items-center justify-center">

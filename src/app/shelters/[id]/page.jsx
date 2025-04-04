@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { assets } from '@/assets/assets';
 import Link from 'next/link';
 import ShelterDetailMapWrapper from '@/components/map/ShelterDetailMapWrapper';
+import { Button } from '@/components/ui/button';
+
 
 async function getShelter(id) {
   try {
@@ -52,7 +54,7 @@ async function getShelter(id) {
   }
 }
 
-export default async function ShelterDetail({ params }) {
+export default async function ShelterDetail({ params, searchParams }) {
   // Extract the ID value before passing to client components
   const { id } = await params;
   const shelterId = id;
@@ -60,10 +62,19 @@ export default async function ShelterDetail({ params }) {
   const shelter = await getShelter(shelterId);
   if (!shelter) return <div className="p-20 text-center text-red-500">Shelter not found.</div>;
 
+  const searchPar = await searchParams;
+  const backUrl = searchPar.backUrl || '/shelters';
+
   return (
     <div className="max-w-6xl mx-auto p-8 pt-28 space-y-12">
       {/* Header Info */}
       <div className="flex flex-col md:flex-row justify-between items-start gap-8 w-full">
+        <Link
+          href={backUrl}
+          className="ml-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline"
+        >
+          Back
+        </Link>
         <div className="flex items-start gap-6 w-full md:w-2/3">
           <div className="w-[180px] h-[180px] bg-white rounded-lg flex items-center justify-center overflow-hidden">
             <Image

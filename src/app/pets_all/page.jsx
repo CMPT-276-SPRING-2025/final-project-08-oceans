@@ -28,7 +28,8 @@ const AllPetsPageClient = () => {
     
     // Show loading when navigating to pet details
     setLoading(true);
-    router.push(`/pets/${petId}`);
+    const backUrl = encodeURIComponent(window.location.pathname + window.location.search); 
+    router.push(`/pets/${petId}?backURL=${backUrl}`);
   };
 
   useEffect(() => {

@@ -161,9 +161,12 @@ const Shelters = () => {
     setTimeout(() => setLoadingProgress(40), 100);
     setTimeout(() => setLoadingProgress(70), 300);
     
+    // Construct the back URL with the current page's URL
+    const backUrl = encodeURIComponent(window.location.pathname + window.location.search); 
+    
     // Navigate after a short delay to allow the loading animation to be seen
     setTimeout(() => {
-      router.push(`/shelters/${shelterId}`);
+      router.push(`/shelters/${shelterId}?backUrl=${backUrl}`);
     }, 600);
   };
 

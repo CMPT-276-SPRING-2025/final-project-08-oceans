@@ -149,7 +149,8 @@ const ResultsPage = () => {
                       type: localStorage.getItem('petType') || '',
                       subType: localStorage.getItem('petSubType') || ''
                     }));
-                    router.push(`/pets/${pet.id}`);
+                    const backUrl = encodeURIComponent(window.location.pathname + window.location.search); 
+                    router.push(`/pets/${pet.id}?backURL=${backUrl}`);
                   }}
                 >
                   Adopt me!
