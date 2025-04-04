@@ -59,6 +59,16 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     const catAffectionSet = new Set();
     const catCoatSet = new Set();
 
+    const handleStandardField = (q, key, answer) => {
+      if (q.multiple) {
+         if (!query[key]) query[key] = [];
+         const valuesToAdd = Array.isArray(answer) ? answer : [answer];
+         query[key].push(...valuesToAdd);
+      } else {
+         query[key] = answer;
+      }
+   }
+
     questions.forEach((q, index) => {
       const key = q.apiKey || q.apiField;
       const answer = selectedAnswers[index];
@@ -72,14 +82,19 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
           else if (answer === 'high-energy') energyDogBreeds.high_energy?.forEach(b => breedSet.add(b));
         } else if (key === 'coat' && answer === 'hypoallergenic') {
           hypoallergenicDogBreeds.hypoallergenic_breeds_akc_in_api?.forEach(b => breedSet.add(b));
-        } else {
-          if (q.multiple) {
-            if (!query[key]) query[key] = [];
-            if (Array.isArray(answer)) query[key].push(...answer);
-            else query[key].push(answer);
-          } else {
-            query[key] = answer;
-          }
+        } else if (key === 'tags') {
+          const tagValues = Array.isArray(answer) ? answer : [answer]; // Ensure array
+
+          if (tagValues.includes("no_pets")){} // Add nothing
+          tagValues.forEach(tagValue => {
+              // Check if it's one of the specific Petfinder boolean flags
+              if (['good_with_children', 'good_with_dogs', 'good_with_cats'].includes(tagValue)) {
+                  // Use the tag value itself as the query key, set value to true
+                  query[tagValue] = true; // Petfinder uses boolean flags
+              }
+          });
+        }else {
+          handleStandardField(q, key, answer);
         }
       }
 
@@ -95,14 +110,19 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
           else if (answer === 'balanced') dependenceCatBreeds.dependence_level.middle_ground?.forEach(b => catAffectionSet.add(b));
         } else if (key === 'coat' && answer === 'hypoallergenic') {
           hypoallergenicCatBreeds.hypoallergenic_breeds?.forEach(b => catCoatSet.add(b));
-        } else {
-          if (q.multiple) {
-            if (!query[key]) query[key] = [];
-            if (Array.isArray(answer)) query[key].push(...answer);
-            else query[key].push(answer);
-          } else {
-            query[key] = answer;
-          }
+        } else if (key === 'tags') {
+          const tagValues = Array.isArray(answer) ? answer : [answer]; // Ensure array
+
+          if (tagValues.includes("no_pets")){} // Add nothing
+          tagValues.forEach(tagValue => {
+              // Check if it's one of the specific Petfinder boolean flags
+              if (['good_with_children', 'good_with_dogs', 'good_with_cats'].includes(tagValue)) {
+                  // Use the tag value itself as the query key, set value to true
+                  query[tagValue] = true; // Petfinder uses boolean flags
+              }
+          });
+        }else {
+          handleStandardField(q, key, answer);
         }
       }
 
@@ -132,19 +152,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
             });
           }
         } else {
-          if (q.multiple) {
-            if (!Array.isArray(query[key])) {
-              query[key] = Array.isArray(answer) ? [...answer] : [answer];
-            } else {
-              if (Array.isArray(answer)) {
-                query[key].push(...answer);
-              } else {
-                query[key].push(answer);
-              }
-            }
-          } else {
-            query[key] = answer;
-          }
+          handleStandardField(q, key, answer);
         }
       }
       
@@ -227,25 +235,11 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     let allPets = [];
   
     try {
-      if (query.includes('age=')) {
-        const ageMatch = query.match(/age=([^&]*)/);
-        const ageValues = ageMatch ? ageMatch[1].split(',') : [];
-  
-        for (const age of ageValues) {
-          const modifiedQuery = query.replace(/age=([^&]*)/, `age=${age}`);
-          const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${modifiedQuery}`);
-          const data = await res.json();
-          if (data?.pets?.length) {
-            allPets.push(...data.pets);
-          }
-        }
-      } else {
         const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${query}`);
         const data = await res.json();
         if (data?.pets?.length) {
           allPets = data.pets;
         }
-      }
   
       if (!allPets.length) {
         relaxedQuery = buildRelaxedQuery();
@@ -295,7 +289,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         </p>
         <div className="flex flex-col gap-8 text-left">
           {question.options.map((option, i) => {
-            const isMulti = question.apiKey === 'age' || question.apiKey === 'tags';
+            const isMulti = question.multiple;
             const currentValue = selectedAnswers[currentQuestion];
 
             const isChecked = isMulti
