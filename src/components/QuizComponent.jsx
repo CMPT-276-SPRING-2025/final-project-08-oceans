@@ -54,10 +54,16 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
   const buildQueryFromAnswers = () => {
     const query = {};
     let breedSet = new Set();
+    let dogBreedSet = new Set();
+    let dogCoatSet = new Set();
+
      // temp sets to collect breed-related answers separately
-    const catEnergySet = new Set();
-    const catAffectionSet = new Set();
-    const catCoatSet = new Set();
+    let catEnergySet = new Set();
+    let catAffectionSet = new Set();
+    let catCoatSet = new Set();
+
+    let careSet = new Set();
+    let interactionSet = new Set();
 
     const handleStandardField = (q, key, answer) => {
       if (q.multiple) {
@@ -77,11 +83,11 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       // DOGS
       if (type === 'dog') {
         if (key === 'breed') {
-          if (answer === 'low-energy') energyDogBreeds.low_energy?.forEach(b => breedSet.add(b));
-          else if (answer === 'moderate-energy') energyDogBreeds.medium_energy?.forEach(b => breedSet.add(b));
-          else if (answer === 'high-energy') energyDogBreeds.high_energy?.forEach(b => breedSet.add(b));
+          if (answer === 'low-energy') energyDogBreeds.low_energy?.forEach(b => dogBreedSet.add(b));
+          else if (answer === 'moderate-energy') energyDogBreeds.medium_energy?.forEach(b => dogBreedSet.add(b));
+          else if (answer === 'high-energy') energyDogBreeds.high_energy?.forEach(b => dogBreedSet.add(b));
         } else if (key === 'coat' && answer === 'hypoallergenic') {
-          hypoallergenicDogBreeds.hypoallergenic_breeds_akc_in_api?.forEach(b => breedSet.add(b));
+          hypoallergenicDogBreeds.hypoallergenic_breeds_akc_in_api?.forEach(b => dogCoatSet.add(b));
         } else if (key === 'tags') {
           const tagValues = Array.isArray(answer) ? answer : [answer]; // Ensure array
 
@@ -141,24 +147,61 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
           // Match answer with care levels
           if (careOptions) {
             Object.values(careOptions).forEach(list => {
-              list?.forEach(b => breedSet.add(b));
+              list?.forEach(b => careSet.add(b));
             });
           }
       
           // Match answer with interaction levels
           if (interactionOptions) {
             Object.values(interactionOptions).forEach(list => {
-              list?.forEach(b => breedSet.add(b));
+              list?.forEach(b => interactionSet.add(b));
             });
           }
         } else {
           handleStandardField(q, key, answer);
         }
       }
-      
-      
     });
+    
+    if (type === 'dog') {
+      if (dogCoatSet.size > 0) {
+        // Find the intersection of dogBreedSet and dogCoatSet
+        for (const breed of dogBreedSet) {
+          if (dogCoatSet.has(breed)) {
+            breedSet.add(breed);
+          }
+        }
+      }
+      else{
+        breedSet = dogBreedSet;
+      }
+    }
+    else if (type === 'cat') {
+      if (catCoatSet.size > 0) {
+        // Find the intersection of catEnergySet, catAffectionSet, and catCoatSet
+        for (const breed of catEnergySet) {
+          if (catAffectionSet.has(breed) && catCoatSet.has(breed)) {
+            breedSet.add(breed);
+          }
+        }
+      }
+      else{
+        for (const breed of catEnergySet) {
+          if (catAffectionSet.has(breed)) {
+            breedSet.add(breed);
+          }
+        }
+      }
+    } else if (['bird', 'fish', 'reptile', 'small-pets'].includes(type)) {
+      // Find the intersection of careSet and interactionSet
+      for (const breed of careSet) {
+        if (interactionSet.has(breed)) {
+          breedSet.add(breed);
+        }
+      }
+    }
 
+    // Add the breed sets to the query
     if (breedSet.size > 0) {
       query['breed'] = Array.from(breedSet).join(',');
     }
@@ -170,21 +213,41 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
 
   const buildRelaxedQuery = () => {
     const query = {};
-  
+    let breedSet = new Set();
+
     questions.forEach((q, index) => {
       const key = q.apiKey || q.apiField;
       const answer = selectedAnswers[index];
+
       if (!key || !answer) return;
   
-      const skipKeys = ['tags', 'coat', 'breed', 'good_with',];
+      const skipKeys = ['size', 'breed'];
   
       if (['bird', 'fish', 'reptile', 'small-pets'].includes(type)) {
-        skipKeys.push('age','size');
+        skipKeys.push('age');
       }
   
       if (skipKeys.includes(key)) return;
-  
-      if (q.multiple) {
+      if (key === 'coat' && answer === 'hypoallergenic'){
+        if (type === 'dog') {
+          hypoallergenicDogBreeds.hypoallergenic_breeds_akc_in_api?.forEach(b => breedSet.add(b));
+        } else if (type === 'cat') {
+          hypoallergenicCatBreeds.hypoallergenic_breeds?.forEach(b => breedSet.add(b));
+        }
+      }
+      if (key === 'tags') {
+        const tagValues = Array.isArray(answer) ? answer : [answer]; // Ensure array
+
+        if (tagValues.includes("no_pets")){} // Add nothing
+        tagValues.forEach(tagValue => {
+            // Check if it's one of the specific Petfinder boolean flags
+            if (['good_with_children', 'good_with_dogs', 'good_with_cats'].includes(tagValue)) {
+                // Use the tag value itself as the query key, set value to true
+                query[tagValue] = true; // Petfinder uses boolean flags
+            }
+        });
+      }
+      else if (q.multiple) {
         if (!query[key]) query[key] = [];
         if (Array.isArray(answer)) {
           query[key].push(...answer);

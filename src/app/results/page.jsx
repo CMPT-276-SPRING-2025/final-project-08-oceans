@@ -59,14 +59,14 @@ const ResultsPage = () => {
     const quizQuery = localStorage.getItem('quizQuery') || '';
 
     // Build the URL by merging quiz filters with the location filter
-    let url = `/pets?${quizQuery}+&type=${petType}`;
+    let url = `/pets?${quizQuery}&type=${petType}`;
     if (petSubType) {
       url += `&subType=${petSubType}`;
     }
     if (location) {
       url += `&location=${encodeURIComponent(location)}`;
     }
-    
+
     try {
       const res = await fetch(url);
       const data = await res.json();
