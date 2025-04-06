@@ -172,22 +172,26 @@ const Shelters = () => {
 
       
   const handleShelterSelect = useCallback((shelterId) => {
-    setSelectedShelterId(shelterId);
+    console.log(`Parent notified by popup button: Shelter ID: ${shelterId}. Scrolling.`);
+    setSelectedShelterId(shelterId); // Update state if needed
 
-    // Scroll to the selected shelter card
-    const shelterCard = document.getElementById(`shelter-${shelterId}`);
+    // --- Scroll Logic ---
+    const shelterCardId = `shelter-${shelterId}`;
+    const shelterCard = document.getElementById(shelterCardId);
     if (shelterCard) {
         shelterCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Highlight the card
-        shelterCard.classList.add('ring-2', 'ring-orange-500');
-        const timer = setTimeout(() => {
-            // Check if the card still exists before removing class
-            const currentCard = document.getElementById(`shelter-${shelterId}`);
+        // Optional: Highlighting triggered by parent state change (or keep highlight here)
+        shelterCard.classList.add('ring-2', 'ring-orange-500', 'transition-shadow', 'duration-1500');
+        setTimeout(() => {
+            const currentCard = document.getElementById(shelterCardId);
             currentCard?.classList.remove('ring-2', 'ring-orange-500');
         }, 2000);
+    } else {
+        console.warn(`Shelter card with ID ${shelterCardId} not found for scrolling.`);
     }
-  }, []); 
+
+  }, []);
 
     
 
