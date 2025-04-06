@@ -1,17 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { saveToSessionStorage, getFromSessionStorage } from '@/lib/clientStorage';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 
 export default function ShelterDetailMap({ shelter }) {
-  const mapContainer = useRef(null);
-  const map = useRef(null);
   const [mapboxKey, setMapboxKey] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
+  const [staticMapUrl, setStaticMapUrl] = useState(null);
 
   // Fetch Mapbox API key
   useEffect(() => {
@@ -43,9 +40,9 @@ export default function ShelterDetailMap({ shelter }) {
     getMapboxKey();
   }, []);
 
-  // Geocode the shelter address and initialize map
+  // Geocode the shelter address
   useEffect(() => {
-    if (!mapboxKey || !mapContainer.current || !shelter) return;
+    if (!mapboxKey || !shelter) return;
     
     const geocodeShelterAddress = async () => {
       try {
@@ -83,71 +80,67 @@ export default function ShelterDetailMap({ shelter }) {
         }
         
         setCoordinates(shelterCoordinates);
-        
-        // Initialize the map
-        mapboxgl.accessToken = mapboxKey;
-        
-        if (map.current) map.current.remove();
-        
-        map.current = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v11',
-          center: shelterCoordinates,
-          zoom: 14,
-        });
-        
-        // Add navigation controls
-        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-        
-        // Add marker
-        const popupContent = document.createElement('div');
-        popupContent.innerHTML = `
-          <div style="max-width: 200px; padding: 10px;">
-            <h3 style="margin: 0 0 8px; font-weight: 600;">${shelter.name}</h3>
-            <p style="margin: 0 0 8px; font-size: 13px;">${shelter.location}</p>
-            <button id="get-directions" style="background-color: #F26A21; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; width: 100%;">
-              Get Directions
-            </button>
-          </div>
-        `;
-        
-        const popup = new mapboxgl.Popup({ offset: 25 })
-          .setDOMContent(popupContent);
-        
-        new mapboxgl.Marker({ color: '#F26A21' })
-          .setLngLat(shelterCoordinates)
-          .setPopup(popup)
-          .addTo(map.current)
-          .togglePopup(); // Show popup by default
-        
-        // Add click handler to the Get Directions button
-        map.current.on('load', () => {
-          const directionsButton = document.getElementById('get-directions');
-          if (directionsButton) {
-            directionsButton.addEventListener('click', () => {
-              // Open in Google Maps
-              const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(shelter.location)}`;
-              window.open(url, '_blank');
-            });
-          }
-        });
+
       } catch (err) {
-        console.error('Error initializing map:', err);
-        setError(err.message || 'Failed to load map');
+        console.error('Error during Geocodingp:', err);
+        setError(err.message || 'Failed to determine location');
+        setCoordinates(null);
       } finally {
         setLoading(false);
       }
     };
     
     geocodeShelterAddress();
-    
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
+  
+  }, [mapboxKey, shelter]);
+
+  // Initialize the static map
+  useEffect(() => {
+
+    if (!coordinates || !mapboxKey || staticMapUrl) {
+        // If we have coordinates & key, but maybe loading is still true from key fetch, stop it.
+        if (coordinates && mapboxKey && loading) setLoading(false);
+        return;
+    }
+
+    const fetchStaticMap = async () => {
+      // setLoading(true); // Set loading true specifically for this fetch step
+      setError(null); // Clear previous errors before fetching URL
+
+      try {
+        const lon = coordinates[0];
+        const lat = coordinates[1];
+        // Construct URL for the API route
+        const apiUrl = `/api/mapbox?action=staticmap&lon=${lon}&lat=${lat}`;
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Failed to fetch static map URL: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.staticMapURL) {
+          setStaticMapUrl(data.staticMapURL);
+        } else {
+          throw new Error('Static map URL not found in API response');
+        }
+
+      } catch (err) {
+        console.error("Error fetching static map URL:", err);
+        setError(err.message || 'Failed to load map image');
+        setStaticMapUrl(null); 
+      } finally {
+        setLoading(false);
       }
     };
-  }, [mapboxKey, shelter]);
+
+     if (coordinates && mapboxKey) {
+        fetchStaticMap();
+     }
+
+  }, [coordinates, mapboxKey, staticMapUrl]);
 
   return (
     <div className="relative w-full h-full">
@@ -169,7 +162,14 @@ export default function ShelterDetailMap({ shelter }) {
         </div>
       )}
       
-      <div ref={mapContainer} className="w-full h-full rounded-lg" />
+      {!loading && !error && staticMapUrl && (
+        <img
+          key={staticMapUrl}
+          src={staticMapUrl}
+          alt={`Map showing location of ${shelter?.name || 'the shelter'}`}
+          className="w-full h-full rounded-lg object-cover"
+        />
+      )}
     </div>
   );
 }

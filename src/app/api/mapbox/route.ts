@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const MAPBOX_BASE_URL = 'https://api.mapbox.com';
 const GEOCODING_ENDPOINT = '/geocoding/v5/mapbox.places';
 const DIRECTIONS_ENDPOINT = '/directions/v5/mapbox';
+const STATIC_IMAGE_ENDPOINT = '/styles/v1/mapbox/streets-v11/static';
 
 const NAVIGATION_PROFILES = {
   driving: 'mapbox/driving',
@@ -79,7 +80,50 @@ export async function GET(request: NextRequest) {
         cache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
         return NextResponse.json(result);
       }
-      
+      case 'staticmap': {
+        const lonStr = searchParams.get('lon');
+        const latStr = searchParams.get('lat');
+        const zoomStr = searchParams.get('zoom') || '14';
+        const widthStr = searchParams.get('width') || '600';
+        const heightStr = searchParams.get('height') || '400';
+        const markerColor = searchParams.get('markerColor') || 'f97316';
+        const markerSize = searchParams.get('markerSize') || 'm';
+
+        if (!lonStr || !latStr) {
+          return NextResponse.json(
+            { error: 'Longitude and latitude parameters are required' },
+            { status: 400 }
+          );
+        }
+
+        const lon = parseFloat(lonStr);
+        const lat = parseFloat(latStr);
+        const zoom = parseInt(zoomStr, 10);
+        const width = parseInt(widthStr, 10);
+        const height = parseInt(heightStr, 10);
+
+        if (isNaN(lon) || isNaN(lat) || isNaN(zoom) || isNaN(width) || isNaN(height)) {
+          return NextResponse.json(
+            { error: 'Invalid parameters' },
+            { status: 400 }
+          );
+        }
+
+        const cacheKey = `staticmap:${lon}:${lat}:${zoom}:${width}:${height}:${markerSize}:${markerColor}`;
+        const cachedResult = cache.get(cacheKey);
+        if (cachedResult) {
+          return NextResponse.json(cachedResult);
+        }
+
+        const markerOverlay = `pin-${markerSize}-s+${markerColor}(${lon},${lat})`;
+
+        const url = `${MAPBOX_BASE_URL}${STATIC_IMAGE_ENDPOINT}/${markerOverlay}/${lon},${lat},${zoom}/${width}x${height}@2x?access_token=${process.env.MAPBOX_KEY}&attribution=false&logo=false`;
+
+        const result = { staticMapURL: url };
+        cache.set(cacheKey, result);
+        return NextResponse.json(result);
+      }
+
       default:
         return NextResponse.json({
           mapboxKey: process.env.MAPBOX_KEY,

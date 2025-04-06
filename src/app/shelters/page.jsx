@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -170,21 +170,30 @@ const Shelters = () => {
     }, 600);
   };
 
-  const handleShelterSelect = (shelterId) => {
-    setSelectedShelterId(shelterId);
-    
-    // Scroll to the selected shelter card
-    const shelterCard = document.getElementById(`shelter-${shelterId}`);
-    if (shelterCard) {
-      shelterCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
-      // Highlight the card
-      shelterCard.classList.add('ring-2', 'ring-orange-500');
-      setTimeout(() => {
-        shelterCard.classList.remove('ring-2', 'ring-orange-500');
-      }, 2000);
+  const handleShelterSelect = useCallback((shelterId) => {
+    console.log(`Parent notified by popup button: Shelter ID: ${shelterId}. Scrolling.`);
+    setSelectedShelterId(shelterId); // Update state if needed
+
+    // --- Scroll Logic ---
+    const shelterCardId = `shelter-${shelterId}`;
+    const shelterCard = document.getElementById(shelterCardId);
+    if (shelterCard) {
+        shelterCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Optional: Highlighting triggered by parent state change (or keep highlight here)
+        shelterCard.classList.add('ring-2', 'ring-orange-500', 'transition-shadow', 'duration-1500');
+        setTimeout(() => {
+            const currentCard = document.getElementById(shelterCardId);
+            currentCard?.classList.remove('ring-2', 'ring-orange-500');
+        }, 2000);
+    } else {
+        console.warn(`Shelter card with ID ${shelterCardId} not found for scrolling.`);
     }
-  };
+
+  }, []);
+
+    
 
   return (
     <div className="w-full mx-auto p-20 pt-[100px] 2xl:pt-[150px]">
