@@ -40,15 +40,13 @@ describe('Mapbox API Route', () => {
 
   describe('GET Handler', () => {
     it('should return Mapbox key if no action specified', async () => {
-      const request = new NextRequest('http://localhost/api/mapbox');
+      const request = { url: 'http://localhost/api/mapbox' } as NextRequest; // Simulate NextRequest
       const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
       const response = await GET(request);
 
       expect(jsonSpy).toHaveBeenCalledWith(
         { mapboxKey: 'test-mapbox-key', message: 'Use this token for client-side map rendering' }
-        // We don't need to check the second arg (init) if it's undefined/default
       );
-      // Check status directly on the response object returned by the handler
       expect(response.status).toBe(200);
       const responseBody = await response.json();
       expect(responseBody.mapboxKey).toBe('test-mapbox-key');
@@ -56,7 +54,7 @@ describe('Mapbox API Route', () => {
 
     it('should return 500 if MAPBOX_KEY is not set', async () => {
       delete process.env.MAPBOX_KEY;
-      const request = new NextRequest('http://localhost/api/mapbox?action=geocode&address=test');
+      const request = { url: 'http://localhost/api/mapbox?action=geocode&address=test' } as NextRequest; // Simulate NextRequest
       const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
       const response = await GET(request);
 
@@ -74,26 +72,24 @@ describe('Mapbox API Route', () => {
         };
         (global.fetch as jest.Mock).mockImplementationOnce(mockFetch(mockGeocodeResponse));
 
-        const request = new NextRequest('http://localhost/api/mapbox?action=geocode&address=Test%20Location');
+        const request = { url: 'http://localhost/api/mapbox?action=geocode&address=Test%20Location' } as NextRequest; // Simulate NextRequest
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await GET(request);
 
         expect(global.fetch).toHaveBeenCalledWith(
           expect.stringContaining('https://api.mapbox.com/geocoding/v5/mapbox.places/Test%20Location.json?access_token=test-mapbox-key')
-          // Removed undefined second argument
         );
         expect(jsonSpy).toHaveBeenCalledWith(
           {
             query: 'Test Location',
             features: [{ id: 'place.123', place_name: 'Test Location', coordinates: [-74, 40], place_type: ['place'], relevance: 1 }],
           }
-          // No need to check second arg if default status 200
         );
         expect(response.status).toBe(200);
       });
 
       it('should return 400 if address parameter is missing', async () => {
-        const request = new NextRequest('http://localhost/api/mapbox?action=geocode');
+        const request = { url: 'http://localhost/api/mapbox?action=geocode' } as NextRequest; // Simulate NextRequest
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await GET(request);
 
@@ -108,7 +104,7 @@ describe('Mapbox API Route', () => {
       it('should return 500 if Mapbox geocoding fails', async () => {
         (global.fetch as jest.Mock).mockImplementationOnce(mockFetch({ message: 'Geocoding Error' }, false, 500));
 
-        const request = new NextRequest('http://localhost/api/mapbox?action=geocode&address=Error%20Location');
+        const request = { url: 'http://localhost/api/mapbox?action=geocode&address=Error%20Location' } as NextRequest; // Simulate NextRequest
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await GET(request);
 
@@ -135,13 +131,13 @@ describe('Mapbox API Route', () => {
           .mockImplementationOnce(mockFetch(mockGeocodeDestResponse)) // Geocode destination
           .mockImplementationOnce(mockFetch(mockDirectionsResponse)); // Get directions
 
-        const request = new NextRequest('http://localhost/api/mapbox?action=navigation&origin=Origin&destination=Destination&mode=driving');
+        const request = { url: 'http://localhost/api/mapbox?action=navigation&origin=Origin&destination=Destination&mode=driving' } as NextRequest; // Simulate NextRequest
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await GET(request);
 
         expect(global.fetch).toHaveBeenCalledTimes(3);
-        expect(global.fetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/geocoding/v5/mapbox.places/Origin.json')); // Removed undefined
-        expect(global.fetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/geocoding/v5/mapbox.places/Destination.json')); // Removed undefined
+        expect(global.fetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/geocoding/v5/mapbox.places/Origin.json'));
+        expect(global.fetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/geocoding/v5/mapbox.places/Destination.json'));
         expect(global.fetch).toHaveBeenNthCalledWith(3, expect.stringContaining('/directions/v5/mapbox/mapbox/driving/-74,40;-75,41?')); // Corrected path
 
         expect(jsonSpy).toHaveBeenCalledWith(
@@ -151,13 +147,12 @@ describe('Mapbox API Route', () => {
             destination: { name: 'Destination', coordinates: [-75, 41] },
             mode: 'driving',
           })
-          // No need to check second arg if default status 200
         );
         expect(response.status).toBe(200);
       });
 
       it('should return 400 if origin or destination is missing', async () => {
-        const request = new NextRequest('http://localhost/api/mapbox?action=navigation&origin=Origin');
+        const request = { url: 'http://localhost/api/mapbox?action=navigation&origin=Origin' } as NextRequest; // Simulate NextRequest
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await GET(request);
 
@@ -172,7 +167,7 @@ describe('Mapbox API Route', () => {
       it('should return 500 if Mapbox navigation fails (e.g., geocoding fails)', async () => {
         (global.fetch as jest.Mock).mockImplementationOnce(mockFetch({}, false, 500)); // Fail geocoding origin
 
-        const request = new NextRequest('http://localhost/api/mapbox?action=navigation&origin=ErrorOrigin&destination=Destination');
+        const request = { url: 'http://localhost/api/mapbox?action=navigation&origin=ErrorOrigin&destination=Destination' } as NextRequest; // Simulate NextRequest
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await GET(request);
 
@@ -189,10 +184,11 @@ describe('Mapbox API Route', () => {
   describe('POST Handler', () => {
     it('should return 500 if MAPBOX_KEY is not set', async () => {
       delete process.env.MAPBOX_KEY;
-      const request = new NextRequest('http://localhost/api/mapbox', {
+      const request = { // Simulate NextRequest
+        url: 'http://localhost/api/mapbox',
         method: 'POST',
-        body: JSON.stringify({ action: 'geocode', addresses: ['test'] }),
-      });
+        json: async () => ({ action: 'geocode', addresses: ['test'] }),
+      } as NextRequest;
       const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
       const response = await POST(request);
 
@@ -204,10 +200,11 @@ describe('Mapbox API Route', () => {
     });
 
     it('should return 400 for invalid action', async () => {
-      const request = new NextRequest('http://localhost/api/mapbox', {
+      const request = { // Simulate NextRequest
+        url: 'http://localhost/api/mapbox',
         method: 'POST',
-        body: JSON.stringify({ action: 'invalid' }),
-      });
+        json: async () => ({ action: 'invalid' }),
+      } as NextRequest;
       const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
       const response = await POST(request);
       expect(jsonSpy).toHaveBeenCalledWith(
@@ -226,16 +223,17 @@ describe('Mapbox API Route', () => {
           .mockImplementationOnce(mockFetch(mockGeocodeResponse1))
           .mockImplementationOnce(mockFetch(mockGeocodeResponse2));
 
-        const request = new NextRequest('http://localhost/api/mapbox', {
+        const request = { // Simulate NextRequest
+          url: 'http://localhost/api/mapbox',
           method: 'POST',
-          body: JSON.stringify({ action: 'geocode', addresses: ['Addr 1', 'Addr 2'] }),
-        });
+          json: async () => ({ action: 'geocode', addresses: ['Addr 1', 'Addr 2'] }),
+        } as NextRequest;
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await POST(request);
 
         expect(global.fetch).toHaveBeenCalledTimes(2);
-        expect(global.fetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/geocoding/v5/mapbox.places/Addr%201.json')); // Removed undefined
-        expect(global.fetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/geocoding/v5/mapbox.places/Addr%202.json')); // Removed undefined
+        expect(global.fetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/geocoding/v5/mapbox.places/Addr%201.json'));
+        expect(global.fetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/geocoding/v5/mapbox.places/Addr%202.json'));
 
         expect(jsonSpy).toHaveBeenCalledWith(
           {
@@ -244,16 +242,16 @@ describe('Mapbox API Route', () => {
               expect.objectContaining({ query: 'Addr 2' }),
             ],
           }
-          // No need to check second arg if default status 200
         );
         expect(response.status).toBe(200);
       });
 
       it('should return 400 if addresses array is missing or invalid', async () => {
-        const request = new NextRequest('http://localhost/api/mapbox', {
+        const request = { // Simulate NextRequest
+          url: 'http://localhost/api/mapbox',
           method: 'POST',
-          body: JSON.stringify({ action: 'geocode', addresses: [] }), // Empty array
-        });
+          json: async () => ({ action: 'geocode', addresses: [] }), // Empty array
+        } as NextRequest;
         let jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         let response = await POST(request);
         expect(jsonSpy).toHaveBeenCalledWith(
@@ -262,10 +260,11 @@ describe('Mapbox API Route', () => {
         );
         expect(response.status).toBe(400);
 
-        const request2 = new NextRequest('http://localhost/api/mapbox', {
+        const request2 = { // Simulate NextRequest
+          url: 'http://localhost/api/mapbox',
           method: 'POST',
-          body: JSON.stringify({ action: 'geocode' }), // Missing addresses
-        });
+          json: async () => ({ action: 'geocode' }), // Missing addresses
+        } as NextRequest;
         jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json'); // Re-spy for the new call
         response = await POST(request2);
         expect(jsonSpy).toHaveBeenCalledWith(
@@ -280,10 +279,11 @@ describe('Mapbox API Route', () => {
           .mockImplementationOnce(mockFetch(mockGeocodeResponse1))
           .mockImplementationOnce(mockFetch({}, false, 500)); // Fail second geocode
 
-        const request = new NextRequest('http://localhost/api/mapbox', {
+        const request = { // Simulate NextRequest
+          url: 'http://localhost/api/mapbox',
           method: 'POST',
-          body: JSON.stringify({ action: 'geocode', addresses: ['Addr 1', 'Error Addr'] }),
-        });
+          json: async () => ({ action: 'geocode', addresses: ['Addr 1', 'Error Addr'] }),
+        } as NextRequest;
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await POST(request);
 
@@ -310,26 +310,27 @@ describe('Mapbox API Route', () => {
           .mockImplementationOnce(mockFetch(mockGeocodeDestResponse)) // Geocode destination
           .mockImplementationOnce(mockFetch(mockDirectionsResponse)); // Get directions
 
-        const request = new NextRequest('http://localhost/api/mapbox', {
+        const request = { // Simulate NextRequest
+          url: 'http://localhost/api/mapbox',
           method: 'POST',
-          body: JSON.stringify({ action: 'navigation', origin: 'Origin', destination: 'Destination', mode: 'walking' }),
-        });
+          json: async () => ({ action: 'navigation', origin: 'Origin', destination: 'Destination', mode: 'walking' }),
+        } as NextRequest;
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await POST(request);
 
         expect(global.fetch).toHaveBeenCalledTimes(3);
         expect(jsonSpy).toHaveBeenCalledWith(
           expect.objectContaining({ mode: 'walking' })
-          // No need to check second arg if default status 200
         );
         expect(response.status).toBe(200);
       });
 
       it('should return 400 if origin or destination is missing', async () => {
-        const request = new NextRequest('http://localhost/api/mapbox', {
+        const request = { // Simulate NextRequest
+          url: 'http://localhost/api/mapbox',
           method: 'POST',
-          body: JSON.stringify({ action: 'navigation', origin: 'Origin Only' }),
-        });
+          json: async () => ({ action: 'navigation', origin: 'Origin Only' }),
+        } as NextRequest;
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await POST(request);
 
@@ -343,10 +344,11 @@ describe('Mapbox API Route', () => {
       it('should return 500 if Mapbox navigation fails', async () => {
         (global.fetch as jest.Mock).mockImplementationOnce(mockFetch({}, false, 500)); // Fail geocoding
 
-        const request = new NextRequest('http://localhost/api/mapbox', {
+        const request = { // Simulate NextRequest
+          url: 'http://localhost/api/mapbox',
           method: 'POST',
-          body: JSON.stringify({ action: 'navigation', origin: 'ErrorOrigin', destination: 'Destination' }),
-        });
+          json: async () => ({ action: 'navigation', origin: 'ErrorOrigin', destination: 'Destination' }),
+        } as NextRequest;
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await POST(request);
 

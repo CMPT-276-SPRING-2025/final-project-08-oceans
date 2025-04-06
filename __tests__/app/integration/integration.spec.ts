@@ -1,244 +1,133 @@
-
-/*
 import { test, expect } from '@playwright/test';
 
-test.describe('Component and API interactions', () => {
-  test('loading bar should appear during API calls and disappear when completed', async ({ page }) => {
-    await page.goto('/pets_all');
-    
-    const loadingBar = page.locator('[data-testid="loading-indicator"]').or(page.locator('.loading'));
-    
-    await page.waitForSelector('.pet-card, [data-testid="pet-card"]', { state: 'visible', timeout: 100000000 });
-    
-    await expect(loadingBar).not.toBeVisible({ timeout: 100000000 });
+test.describe('Integration Tests', () => {
+  // Basic test to ensure the suite runs
+  test('Setup Test', () => {
+    expect(true).toBe(true);
   });
 
-  test('quiz component should show appropriate results based on selections', async ({ page }) => {
-    await page.goto('/quiz');
-    
-    await page.getByRole('link', { name: /dog/i }).click();
-    
-    const optionSelectors = [
-      'input[type="radio"], button.option, [data-testid="quiz-option"]',
-    ];
-    
-    await page.waitForSelector(optionSelectors.join(', '), { state: 'visible', timeout: 100000000 });
-    
-    const options = await page.locator(optionSelectors.join(', ')).all();
-    
-    for (let i = 0; i < Math.min(4, options.length); i++) {
-      await options[i].click();
-      await page.waitForTimeout(100000000);
-    }
-    
-    const submitButton = page.getByRole('button', { name: /submit|next|continue/i });
-    await submitButton.click();
-    
-    await page.waitForSelector('.result-card, [data-testid="result-card"], .pet-card, [data-testid="pet-card"]', 
-      { state: 'visible', timeout: 100000000 });
+  // --- Quiz Flow Tests ---
+  test.describe('Quiz Flow', () => {
+    test('should navigate to the cat quiz page when Cat card is clicked', async ({ page }) => {
+      await page.goto('/quiz');
+
+      // Find the card containing the text "Cats" and click it
+      // Playwright's getByText should find the element, and clicking it often triggers the handler on the parent
+      await page.getByText('Cats').click();
+
+      // Wait for navigation and assert the new URL
+      await page.waitForURL('**/quiz/cats');
+      await expect(page).toHaveURL(/.*\/quiz\/cats/);
+    });
+
+    test('should complete the cat quiz and navigate to results', async ({ page }) => {
+      await page.goto('/quiz/cats');
+
+      // Wait for the first question to load (check for the question heading)
+      await expect(page.locator('h2')).toBeVisible({ timeout: 10000 }); // Increased timeout
+
+      const numberOfQuestions = 5; // Based on catQuestions array length
+
+      for (let i = 0; i < numberOfQuestions; i++) {
+        // Wait for options to be visible for the current question
+        await expect(page.locator('label').first()).toBeVisible({ timeout: 5000 });
+
+        // Click the first option label
+        await page.locator('label').first().click();
+
+        // Find and click the Next/See Results button
+        const nextButton = page.getByRole('button', { name: /Next|See Results/i });
+        await expect(nextButton).toBeEnabled({ timeout: 5000 }); // Ensure it's enabled after selection
+        await nextButton.click();
+
+        // Add a small wait if needed for transition, but waitForSelector below might be enough
+        // await page.waitForTimeout(100);
+
+        // If not the last question, wait for the next question heading to potentially update/appear
+        if (i < numberOfQuestions - 1) {
+           await expect(page.locator('h2')).toBeVisible({ timeout: 5000 });
+        }
+      }
+
+      // After the last question, expect navigation to the results page
+      await page.waitForURL('**/results', { timeout: 15000 }); // Increased timeout for results load
+      await expect(page).toHaveURL(/.*\/results/);
+    });
   });
 
-  test('contact form should validate and submit properly', async ({ page }) => {
-    await page.goto('/contact');
-    
-    await page.waitForSelector('form', { state: 'visible', timeout: 100000000 });
-  
-    const firstNameInput = page.locator('input[name="firstname"], input[placeholder*="first name" i], input[placeholder="Enter first name"]').first();
-    await firstNameInput.fill('Test');
-    
-    const lastNameInput = page.locator('input[name="lastname"], input[placeholder*="last name" i], input[placeholder="Enter last name"]').first();
-    if (await lastNameInput.count() > 0) {
-      await lastNameInput.fill('User');
-    }
-    
-    const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first();
-    await emailInput.fill('test@example.com');
-    
-    const messageInput = page.locator('textarea, textarea[name="message"], textarea[placeholder*="message" i]').first();
-    await messageInput.fill('This is a test message');
-    
-    const submitButton = page.getByRole('button', { name: /send|submit|contact/i }).first();
-    await submitButton.click();
-    
-    await page.waitForSelector('.success-message, .alert-success, [data-testid="success-message"], div:has-text("Message sent successfully")', 
-      { state: 'visible', timeout: 100000000 });
+  // --- Contact Form Tests ---
+  test.describe('Contact Form', () => {
+    test('should submit the form successfully', async ({ page }) => {
+      await page.goto('/contact');
+
+      // Fill the form fields
+      await page.locator('input[name="firstname"]').fill('Test');
+      await page.locator('input[name="lastname"]').fill('User');
+      await page.locator('input[name="email"]').fill('test@example.com');
+      await page.locator('textarea[name="message"]').fill('This is a test message.');
+
+      // Click the submit button
+      await page.getByRole('button', { name: 'Submit' }).click();
+
+      // Wait for the success message to appear
+      const successMessage = page.locator('p:has-text("Form Submitted Successfully")');
+      await expect(successMessage).toBeVisible({ timeout: 10000 }); // Increased timeout for API response
+    });
+  });
+
+  // --- Pets Page Tests ---
+  test.describe('Pets Page', () => {
+    test('should filter pets and navigate to detail page', async ({ page }) => {
+      await page.goto('/pets_all');
+
+      // Wait for initial pet cards to load
+      await expect(page.getByRole('button', { name: 'Adopt me!' }).first()).toBeVisible({ timeout: 15000 });
+
+      // Click Cats filter
+      await page.getByRole('button', { name: 'Cats' }).click();
+      // Wait for potential DOM update after filtering
+      await page.waitForTimeout(500); // Small delay to allow potential re-render
+      await expect(page.getByRole('button', { name: 'Adopt me!' }).first()).toBeVisible({ timeout: 10000 }); // Re-check visibility
+
+      // Click Dogs filter
+      await page.getByRole('button', { name: 'Dogs' }).click();
+      // Wait for potential DOM update after filtering
+      await page.waitForTimeout(500);
+      await expect(page.getByRole('button', { name: 'Adopt me!' }).first()).toBeVisible({ timeout: 10000 }); // Re-check visibility
+
+      // Click the first "Adopt me!" button
+      await page.getByRole('button', { name: 'Adopt me!' }).first().click();
+
+      // Assert navigation to a pet detail page
+      await page.waitForURL(/\/pets\/\d+/, { timeout: 10000 }); // Wait for URL matching /pets/[id]
+      await expect(page).toHaveURL(/\/pets\/\d+/); // Regex to match /pets/ followed by numbers
+    });
+  });
+
+  // --- Shelters Page Tests ---
+  test.describe('Shelters Page', () => {
+    test('should search by location and navigate to shelter details', async ({ page }) => {
+      await page.goto('/shelters');
+
+      // Wait for initial shelter cards to load
+      await expect(page.getByRole('button', { name: 'View' }).first()).toBeVisible({ timeout: 15000 });
+
+      // Fill location search input
+      await page.getByPlaceholder('Location').fill('San Francisco');
+
+      // Click Search button
+      await page.getByRole('button', { name: 'Search' }).click();
+
+      // Wait for potential DOM update after search
+      await page.waitForTimeout(1000); // Increased delay for search results
+      await expect(page.getByRole('button', { name: 'View' }).first()).toBeVisible({ timeout: 10000 }); // Re-check visibility
+
+      // Click the first "View" button
+      await page.getByRole('button', { name: 'View' }).first().click();
+
+      // Assert navigation to a shelter detail page
+      await page.waitForURL(/\/shelters\/\w+/, { timeout: 10000 }); // Wait for URL matching /shelters/[id] (id can be alphanumeric)
+      await expect(page).toHaveURL(/\/shelters\/\w+/); // Regex to match /shelters/ followed by word characters
+    });
   });
 });
-
-test.describe('User interactions with pages', () => {
-  test('shelters page should display correct information and filters should work', async ({ page }) => {
-    await page.goto('/shelters');
-    
-    await page.waitForSelector('.shelter-card, [data-testid="shelter-card"]', 
-      { state: 'visible', timeout: 100000000 });
-    
-    const locationInput = page.locator('input[placeholder*="location" i], input[name="location"]').first();
-    
-    if (await locationInput.count() > 0) {
-      await locationInput.fill('San Francisco');
-      
-      const searchButton = page.getByRole('button', { name: /search|filter|find/i }).or(
-        page.locator('button.search-button, [data-testid="search-button"]')
-      ).first();
-      
-      if (await searchButton.count() > 0) {
-        await searchButton.click();
-      } else {
-      
-      const searchButton = page.getByRole('button', { name: /search|filter|find/i }).or(
-        page.locator('button.search-button, [data-testid="search-button"]')
-      ).first();
-      
-      if (await searchButton.count() > 0) {
-        await searchButton.click();
-      } else {
-        // Press Enter as alternative to clicking search
-        await locationInput.press('Enter');
-      }
-      
-      // Wait for results to update
-      await page.waitForTimeout(100000000);
-    }
-    
-    const shelterCard = page.locator('.shelter-card, [data-testid="shelter-card"]').first();
-    if (await shelterCard.count() > 0) {
-      const viewLink = shelterCard.getByRole('link', { name: /view|details|more/i }).or(
-        shelterCard.locator('a[href*="shelters/"], button.view-button')
-      ).first();
-      
-      if (await viewLink.count() > 0) {
-        await viewLink.click();
-        
-        await page.waitForSelector('.shelter-details, [data-testid="shelter-details"]', 
-          { state: 'visible', timeout: 100000000 });
-      }
-    }
-  });
-
-  test('should complete quiz flow with different options and show relevant results', async ({ page }) => {
-    await page.goto('/quiz');
-    
-    const catOption = page.getByRole('link', { name: /cat/i }).or(
-      page.locator('a[href*="cat"], button:has-text("Cat")')
-    ).first();
-    
-    if (await catOption.count() > 0) {
-      await catOption.click();
-      
-      const optionSelectors = [
-        'input[type="radio"], button.option, [data-testid="quiz-option"]',
-      ];
-      
-      await page.waitForSelector(optionSelectors.join(', '), { state: 'visible', timeout: 100000000 });
-      
-      const options = await page.locator(optionSelectors.join(', ')).all();
-      
-      for (let i = 0; i < Math.min(3, options.length); i++) {
-        await options[i].click();
-        await page.waitForTimeout(100000000);
-      }
-      
-      const submitButton = page.getByRole('button', { name: /submit|next|continue/i }).first();
-      if (await submitButton.count() > 0) {
-        await submitButton.click();
-        
-        await page.waitForSelector('.result-card, [data-testid="result-card"], .pet-card, [data-testid="pet-card"]', 
-          { state: 'visible', timeout: 100000000 });
-      }
-    }
-  });
-
-  test('pets page should filter correctly and show adoption information', async ({ page }) => {
-    await page.goto('/pets_all');
-    
-    await page.waitForSelector('.pet-card, [data-testid="pet-card"]', 
-      { state: 'visible', timeout: 100000000 });
-    
-    const catFilter = page.getByRole('button', { name: /cats/i }).or(
-      page.locator('button:has-text("Cats"), a[href*="type=cat"]')
-    ).first();
-    
-    if (await catFilter.count() > 0) {
-      await catFilter.click();
-      await page.waitForTimeout(100000000);
-    }
-    
-    const dogFilter = page.getByRole('button', { name: /dogs/i }).or(
-      page.locator('button:has-text("Dogs"), a[href*="type=dog"]')
-    ).first();
-    
-    if (await dogFilter.count() > 0) {
-      await dogFilter.click();
-      await page.waitForTimeout(100000000);
-    }
-    
-    const petCard = page.locator('.pet-card, [data-testid="pet-card"]').first();
-    if (await petCard.count() > 0) {
-      await petCard.click();
-      
-      await page.waitForSelector('.pet-details, [data-testid="pet-details"], .pet-name, .pet-info', 
-        { state: 'visible', timeout: 100000000 });
-      
-      const adoptButton = page.getByRole('button', { name: /adopt/i }).or(
-        page.locator('a:has-text("Adopt"), button.adopt-button, [data-testid="adopt-button"]')
-      ).first();
-      
-      if (await adoptButton.count() > 0) {
-        await adoptButton.click();
-        
-        await page.waitForSelector('.shelter-details, .adoption-form', 
-          { state: 'visible', timeout: 100000000 });
-      }
-    }
-  });
-});
-
-test.describe('Session Storage functionality', () => {
-  test('pets data should be stored in session storage to reduce API calls', async ({ page }) => {
-    await page.goto('/pets_all');
-    
-    await page.waitForSelector('.pet-card, [data-testid="pet-card"]', 
-      { state: 'visible', timeout: 100000000 });
-    
-    const sessionStorageData = await page.evaluate(() => {
-      return window.sessionStorage.getItem('petsData') || 
-             window.sessionStorage.getItem('pets') || 
-             window.sessionStorage.getItem('petData');
-    });
-    
-    expect(sessionStorageData).not.toBeNull();
-    
-    await page.reload();
-    
-    await page.waitForSelector('.pet-card, [data-testid="pet-card"]', 
-      { state: 'visible', timeout: 100000000 });
-  });
-  
-  test('shelter data should be stored in session storage', async ({ page }) => {
-    await page.goto('/shelters');
-    
-    await page.waitForSelector('.shelter-card, [data-testid="shelter-card"]', 
-      { state: 'visible', timeout: 100000000 });
-    
-    const sessionStorageData = await page.evaluate(() => {
-      return window.sessionStorage.getItem('sheltersData') || 
-             window.sessionStorage.getItem('shelters') || 
-             window.sessionStorage.getItem('shelterData');
-    });
-    
-    expect(sessionStorageData).not.toBeNull();
-    const sessionStorageData = await page.evaluate(() => {
-      return window.sessionStorage.getItem('sheltersData') || 
-             window.sessionStorage.getItem('shelters') || 
-             window.sessionStorage.getItem('shelterData');
-    });
-    
-    expect(sessionStorageData).not.toBeNull();
-    
-    await page.reload();
-    
-    await page.waitForSelector('.shelter-card, [data-testid="shelter-card"]', 
-      { state: 'visible', timeout: 100000000 });
-  });
-});
-*/

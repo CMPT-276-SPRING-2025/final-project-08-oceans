@@ -25,7 +25,8 @@ global.Request = jest.fn().mockImplementation((url, options = {}) => {
 global.Response = jest.fn().mockImplementation((body, options = {}) => ({
   ok: true,
   status: 200,
-  json: jest.fn().mockResolvedValue(body),
+  // Parse the body if it's a string, otherwise return it directly
+  json: jest.fn().mockResolvedValue(typeof body === 'string' ? JSON.parse(body) : body),
   text: jest.fn().mockResolvedValue(body),
   ...options,
 }));
