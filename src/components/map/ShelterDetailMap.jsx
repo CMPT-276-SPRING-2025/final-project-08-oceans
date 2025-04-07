@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react'; // Add useCallback
 import { saveToSessionStorage, getFromSessionStorage } from '@/lib/clientStorage';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import DirectionMap from './DirectionMap'; // Import DirectionMap
 
 export default function ShelterDetailMap({ shelter }) {
   const mapContainer = useRef(null);
@@ -11,7 +12,8 @@ export default function ShelterDetailMap({ shelter }) {
   const [mapboxKey, setMapboxKey] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [coordinates, setCoordinates] = useState(null);
+  const [coordinates, setCoordinates] = useState(null); // [longitude, latitude]
+  const [showDirectionsPopup, setShowDirectionsPopup] = useState(false); // State for popup visibility
 
   // Fetch Mapbox API key
   useEffect(() => {
@@ -120,17 +122,16 @@ export default function ShelterDetailMap({ shelter }) {
           .addTo(map.current)
           .togglePopup(); // Show popup by default
         
-        // Add click handler to the Get Directions button
-        map.current.on('load', () => {
-          const directionsButton = document.getElementById('get-directions');
-          if (directionsButton) {
-            directionsButton.addEventListener('click', () => {
-              // Open in Google Maps
-              const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(shelter.location)}`;
-              window.open(url, '_blank');
-            });
+        // Function to handle opening the directions popup
+        const handleGetDirectionsClick = () => {
+          // Close the mapbox popup first if it's open
+          if (popup.isOpen()) {
+            popup.remove();
           }
-        });
+          setShowDirectionsPopup(true);
+        };
+
+        // Note: Event listener for the button will be handled via delegation below
       } catch (err) {
         console.error('Error initializing map:', err);
         setError(err.message || 'Failed to load map');
@@ -148,6 +149,44 @@ export default function ShelterDetailMap({ shelter }) {
       }
     };
   }, [mapboxKey, shelter]);
+
+  // Callback to close the directions popup
+  const handleCloseDirections = useCallback(() => {
+    setShowDirectionsPopup(false);
+  }, []);
+
+  // Effect for handling clicks on the directions button via event delegation
+  useEffect(() => {
+    const mapNode = mapContainer.current;
+
+    const handleClick = (event) => {
+      // Check if the clicked element is the button we care about
+      if (event.target.matches('#get-directions')) {
+        // Check if it's inside a mapbox popup
+        if (event.target.closest('.mapboxgl-popup')) {
+          // Find the associated popup instance if needed, though we might not need it now
+          // const popupElement = event.target.closest('.mapboxgl-popup');
+          // Close the mapbox popup first (optional, but good UX)
+          const openPopups = map.current?.getContainer().querySelectorAll('.mapboxgl-popup');
+          openPopups?.forEach(p => {
+            // This is a bit hacky way to potentially close it, might need refinement
+            // Or find the specific popup instance associated with the marker if possible
+            p.remove();
+          });
+
+          setShowDirectionsPopup(true);
+        }
+      }
+    };
+
+    // Add listener to the map container
+    mapNode?.addEventListener('click', handleClick);
+
+    // Cleanup: remove listener when component unmounts
+    return () => {
+      mapNode?.removeEventListener('click', handleClick);
+    };
+  }, []); // Run only once on mount
 
   return (
     <div className="relative w-full h-full">
@@ -170,6 +209,48 @@ export default function ShelterDetailMap({ shelter }) {
       )}
       
       <div ref={mapContainer} className="w-full h-full rounded-lg" />
+
+      {/* Directions Popup Modal */}
+      {showDirectionsPopup && coordinates && mapboxKey && (
+        <div style={{
+          position: 'fixed', // Use fixed to overlay the whole page
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 1000, // Ensure it's above other content
+          backgroundColor: 'white',
+          padding: '20px', // Add some padding around the map component
+          borderRadius: '10px',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+          width: 'clamp(300px, 80vw, 800px)', // Responsive width
+          height: 'clamp(400px, 80vh, 700px)', // Responsive height
+          display: 'flex', // Use flex for centering the inner map
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          <DirectionMap
+            mapboxToken={mapboxKey}
+            endLocation={{ longitude: coordinates[0], latitude: coordinates[1] }} // Pass coordinates correctly
+            endLocationName={shelter.name}
+            onClose={handleCloseDirections} // Pass the close handler
+          />
+        </div>
+      )}
+      {/* Backdrop */}
+      {showDirectionsPopup && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 999, // Below the popup but above other content
+          }}
+          onClick={handleCloseDirections} // Close popup when clicking backdrop
+        />
+      )}
     </div>
   );
 }

@@ -7,7 +7,7 @@
       "esnext"
     ],
     "allowJs": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false, // Set to false to check library types
     "strict": false,
     "noEmit": true,
     "incremental": true,

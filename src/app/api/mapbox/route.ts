@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const MAPBOX_BASE_URL = 'https://api.mapbox.com';
 const GEOCODING_ENDPOINT = '/geocoding/v5/mapbox.places';
-const DIRECTIONS_ENDPOINT = '/directions/v5/mapbox';
+const DIRECTIONS_ENDPOINT = '/directions/v5'; // Remove trailing /mapbox
 
 const NAVIGATION_PROFILES = {
   driving: 'mapbox/driving',
@@ -89,10 +89,11 @@ export async function GET(request: NextRequest) {
           message: 'Use this token for client-side map rendering'
         });
     }
-  } catch (error) {
-    console.error('Mapbox API error:', error);
+  } catch (error: any) { // Catch specific error type
+    console.error('Mapbox API GET error:', error);
     return NextResponse.json(
-      { error: 'Error processing mapbox request' },
+      // Return the specific error message
+      { error: error.message || 'Error processing mapbox request' },
       { status: 500 }
     );
   }
@@ -121,18 +122,30 @@ export async function POST(request: NextRequest) {
           );
         }
         
-        const results = await Promise.all(
+        // Use Promise.allSettled to handle individual geocoding errors
+        const settledResults = await Promise.allSettled(
           addresses.map(async (address) => {
             const cachedResult = cache.get(`geocode:${address}`);
             if (cachedResult) {
-              return cachedResult;
+              return cachedResult; // Return cached result if available
             }
             
-            const result = await geocodeAddress(address);
-            cache.set(`geocode:${address}`, result);
+            const result = await geocodeAddress(address); // Attempt geocoding
+            cache.set(`geocode:${address}`, result); // Cache successful result
             return result;
           })
         );
+
+        // Process settled results: extract fulfilled values, log rejected reasons
+        const results = settledResults.map((result, index) => {
+          if (result.status === 'fulfilled') {
+            return result.value; // Successfully geocoded
+          } else {
+            console.error(`Failed to geocode address "${addresses[index]}":`, result.reason);
+            // Return a structure indicating failure for this address
+            return { query: addresses[index], features: [], error: result.reason?.message || 'Geocoding failed' };
+          }
+        });
         
         return NextResponse.json({ results });
       }
@@ -163,10 +176,11 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
     }
-  } catch (error) {
-    console.error('Mapbox API error:', error);
+  } catch (error: any) { // Catch specific error type
+    console.error('Mapbox API POST error:', error);
     return NextResponse.json(
-      { error: 'Error processing mapbox request' },
+      // Return the specific error message
+      { error: error.message || 'Error processing mapbox request' },
       { status: 500 }
     );
   }
@@ -231,10 +245,14 @@ async function getDirections(
   
   const url = `${MAPBOX_BASE_URL}${DIRECTIONS_ENDPOINT}/${profile}/${coordinatesStr}?alternatives=true&geometries=geojson&overview=full&steps=true&access_token=${process.env.MAPBOX_KEY}`;
   
+  console.log('Requesting Mapbox Directions URL:', url); // Log the URL
+  
   const response = await fetch(url);
   
   if (!response.ok) {
-    throw new Error(`Directions error: ${response.statusText}`);
+    const errorBody = await response.text(); // Try to get error body
+    console.error(`Mapbox Directions API Error: ${response.status} ${response.statusText}`, errorBody); // Log status and body
+    throw new Error(`Directions error: ${response.statusText}`); // Keep original error throw for client
   }
   
   const data = await response.json();
