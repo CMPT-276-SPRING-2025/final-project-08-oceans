@@ -40,6 +40,7 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationN
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showStartPopup, setShowStartPopup] = useState<boolean>(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false); // State for panel collapse
   const [showEndPopup, setShowEndPopup] = useState<boolean>(false);
 
   const mapRef = useRef<MapRef | null>(null); // Use MapRef type
@@ -259,79 +260,99 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationN
         )}
       </Map>
 
-      {/* Input Panel */}
-      <div style={{
-        position: 'absolute',
-        top: '10px',
-        left: '10px',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)', // Slightly transparent background
-        padding: '15px',
-        borderRadius: '8px', // Softer corners
-        boxShadow: '0 4px 8px rgba(0,0,0,0.2)', // Enhanced shadow
-        zIndex: 1,
-        maxWidth: '350px',
-        fontFamily: 'sans-serif' // Basic font
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ccc', paddingBottom: '10px', marginBottom: '15px' }}>
-            <h4 style={{ marginTop: 0, marginBottom: 0 }}>
-                Directions to {endLocationName}
-            </h4>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', padding: '0 5px', lineHeight: '1' }}>&times;</button> {/* Add close button */}
+      {/* Input Panel - Styled with Tailwind */}
+      <div className="absolute top-3 left-3 z-10 bg-white/90 p-4 rounded-lg shadow-lg max-w-sm w-full backdrop-blur-sm">
+        {/* Header */}
+        <div className="flex justify-between items-center border-b border-gray-300 pb-2 mb-4">
+            {/* Title and Collapse Toggle */}
+            <div className="flex items-center gap-2">
+               <button
+                 onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+                 className="text-gray-500 hover:text-gray-800 p-1 rounded-full focus:outline-none focus:ring-1 focus:ring-gray-400"
+                 aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
+               >
+                 {/* Simple Arrow Icon */}
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 transition-transform duration-200 ${isPanelCollapsed ? 'rotate-180' : 'rotate-0'}`}> {/* Corrected rotation logic */}
+                   <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /> {/* Up arrow */}
+                 </svg>
+               </button>
+               <h4 className="text-lg font-semibold text-gray-800">
+                   Directions to {endLocationName}
+               </h4>
+            </div>
+            {/* Close Button (for the whole modal) */}
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-800 text-2xl leading-none p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-400"
+              aria-label="Close directions"
+            >
+              &times;
+            </button>
         </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label htmlFor="startLocation" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Start Location:</label>
-          <input
-            type="text"
-            id="startLocation"
-            value={startLocationInput}
-            onChange={(e) => setStartLocationInput(e.target.value)}
-            placeholder="Enter address or place name"
-            style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}> {/* Increased margin */}
-          <label htmlFor="modeSelect" style={{ marginRight: '10px', fontWeight: 'bold' }}>Mode:</label>
-          <select
-             id="modeSelect"
-             value={mode}
-             onChange={(e) => setMode(e.target.value as 'driving' | 'walking' | 'cycling')}
-             style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-           >
-            <option value="driving">Driving</option>
-            <option value="walking">Walking</option>
-            <option value="cycling">Cycling</option>
-          </select>
-        </div>
-        <button
-          onClick={getDirections}
-          disabled={isLoading || !startLocationInput} // Disable if no input
-          style={{
-             padding: '10px 20px',
-             cursor: 'pointer',
-             backgroundColor: isLoading || !startLocationInput ? '#ccc' : '#007bff', // Blue color
-             color: 'white',
-             border: 'none',
-             borderRadius: '4px',
-             width: '100%', // Full width button
-             fontSize: '1em',
-             opacity: isLoading || !startLocationInput ? 0.7 : 1,
-           }}
-         >
-          {isLoading ? 'Loading...' : 'Get Route'}
-        </button>
-        {error && <p style={{ color: '#dc3545', marginTop: '10px', fontSize: '0.9em' }}>Error: {error}</p>}
 
-        {/* Display Route Info */}
-        {route && !isLoading && (
-          <div style={{ marginTop: '15px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-            <strong style={{ display: 'block', marginBottom: '5px' }}>Route Details:</strong>
-            <p style={{ margin: '5px 0' }}>Distance: {formatDistance(route.distance)}</p>
-            <p style={{ margin: '5px 0' }}>Estimated Time: {formatDuration(route.duration)}</p>
-            {/* Optional: Add a button/link to view steps if needed */}
-          </div>
+        {/* Collapsible Content */}
+        {!isPanelCollapsed && (
+          <> {/* Use Fragment */}
+            {/* Start Location Input */}
+            <div className="mb-3">
+              <label htmlFor="startLocation" className="block mb-1 text-sm font-medium text-gray-700">Start Location:</label>
+              <input
+                type="text"
+                id="startLocation"
+                value={startLocationInput}
+                onChange={(e) => setStartLocationInput(e.target.value)}
+                placeholder="Enter address or place name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+              />
+            </div>
+            {/* Mode Selection */}
+            <div className="mb-4">
+              <label htmlFor="modeSelect" className="block mb-1 text-sm font-medium text-gray-700">Mode:</label>
+              <select
+                 id="modeSelect"
+                 value={mode}
+                 onChange={(e) => setMode(e.target.value as 'driving' | 'walking' | 'cycling')}
+                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-white"
+               >
+                <option value="driving">Driving</option>
+                <option value="walking">Walking</option>
+                <option value="cycling">Cycling</option>
+              </select>
+            </div>
+            {/* Get Route Button */}
+            <button
+              onClick={getDirections}
+              disabled={isLoading || !startLocationInput} // Disable if no input
+              className="w-full px-4 py-2 text-white font-semibold rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+              {isLoading ? (
+                <div className="flex justify-center items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Loading...
+                </div>
+              ) : 'Get Route'}
+            </button>
+            {/* Error Message */}
+            {error && <p className="mt-3 text-sm text-red-600">Error: {error}</p>}
+
+            {/* Display Route Info */}
+            {route && !isLoading && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <strong className="block mb-1 text-sm font-medium text-gray-700">Route Details:</strong>
+                <p className="text-sm text-gray-600">Distance: {formatDistance(route.distance)}</p>
+                <p className="text-sm text-gray-600">Estimated Time: {formatDuration(route.duration)}</p>
+                {/* Optional: Add a button/link to view steps if needed */}
+              </div>
+            )}
+            {/* End of Route Info */}
+          </>
         )}
-      </div>
-    </div>
+        {/* End of Conditional Rendering */}
+      </div> {/* End of Input Panel Div */}
+    </div> /* End of Main Component Div */
   );
 };
 
