@@ -10,7 +10,13 @@ const Footer = () => {
           {/* Left - Paw Icon */}
           <div className="mb-4 md:mb-0 mt-10 mr-100">
             <a href="/" className="flex items-center">
-              <Image src={assets.icon_paw} alt="Paw" width={40} height={40} />
+              <Image 
+              src={assets.icon_paw} 
+              alt="Paw" 
+              width={32} 
+              height={32}
+              priority
+              />
             </a>
           </div>
 

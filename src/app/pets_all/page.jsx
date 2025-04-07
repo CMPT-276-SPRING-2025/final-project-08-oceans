@@ -83,13 +83,11 @@ const AllPetsPageClient = () => {
         const cachedData = getFromSessionStorage(cacheKey)
         
         if (cachedData) {
-          console.log(`Using cached pet data for: ${cacheKey}`)
           setPets(cachedData)
           setLoading(false)
           return
         }
         
-        console.log(`Fetching pets from: ${url}`)
         
         const response = await fetch(url)
         if (!response.ok) {
@@ -97,22 +95,17 @@ const AllPetsPageClient = () => {
         }
         
         const data = await response.json()
-        console.log('Fetched data:', { 
-          petCount: data.pets?.length || 0, 
-          pagination: data.pagination,
-          firstPet: data.pets && data.pets.length > 0 ? data.pets[0] : 'No pets found'
-        })
         
         if (data.pets && Array.isArray(data.pets)) {
           // Save the fetched data to session storage (cache for 30 minutes)
           saveToSessionStorage(cacheKey, data.pets, 30)
           setPets(data.pets)
         } else {
-          console.error('Invalid pets data format:', data)
+
           setPets([])
         }
       } catch (err) {
-        console.error('Error fetching pets:', err)
+
         setError(err.message)
         setPets([])
       } finally {

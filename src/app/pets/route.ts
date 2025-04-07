@@ -90,7 +90,7 @@ export async function GET(request: Request) {
     try {
       token = await getPetfinderToken();
     } catch (tokenError) {
-      console.error('Error getting Petfinder token:', tokenError);
+
       // For tests, return a 500 error
       return NextResponse.json({ error: 'Failed to fetch pets' }, { status: 500 });
     }
@@ -125,7 +125,6 @@ export async function GET(request: Request) {
               ? breeds.reptile_breeds
               : breeds.fish_breeds;
 
-          console.log(`Fetching ${subType} with breeds:`, breedList);
 
           // Join all breeds into a single string
           const allBreeds = breedList.join(',');
@@ -142,15 +141,12 @@ export async function GET(request: Request) {
             queryParams.append('sort', 'distance');
           }
 
-          console.log(`Fetching all ${subType} breeds with params: ${queryParams.toString()}`);
-
           const response = await fetch(`https://api.petfinder.com/v2/animals?${queryParams.toString()}`, {
               headers: { Authorization: `Bearer ${token}` },
               next: { revalidate: 3600 }
           });
 
           if (!response.ok) {
-              console.error(`Failed to fetch ${subType} breeds: ${response.statusText}`);
           } else {
               const data: PetfinderResponse = await response.json();
               animals = [...animals, ...data.animals];
@@ -173,15 +169,12 @@ export async function GET(request: Request) {
           queryParamsSmallFurry.append('sort', 'distance');
         }
 
-        console.log(`Fetching small-furry with params: ${queryParamsSmallFurry.toString()}`);
-
         const responseSmallFurry = await fetch(`https://api.petfinder.com/v2/animals?${queryParamsSmallFurry.toString()}`, {
           headers: { Authorization: `Bearer ${token}` },
           next: { revalidate: 3600 } // Cache for an hour
         });
 
         if (!responseSmallFurry.ok) {
-          console.error(`API error fetching small-furry: ${responseSmallFurry.statusText}`);
         } else {
           const dataSmallFurry: PetfinderResponse = await responseSmallFurry.json();
           smallFurryAnimals = dataSmallFurry.animals;
@@ -201,15 +194,12 @@ export async function GET(request: Request) {
           queryParamsRabbit.append('sort', 'distance');
         }
 
-        console.log(`Fetching rabbit with params: ${queryParamsRabbit.toString()}`);
-
         const responseRabbit = await fetch(`https://api.petfinder.com/v2/animals?${queryParamsRabbit.toString()}`, {
           headers: { Authorization: `Bearer ${token}` },
           next: { revalidate: 3600 } // Cache for an hour
         });
 
         if (!responseRabbit.ok) {
-          console.error(`API error fetching rabbit: ${responseRabbit.statusText}`);
         } else {
           const dataRabbit: PetfinderResponse = await responseRabbit.json();
           rabbitAnimals = dataRabbit.animals;
@@ -286,7 +276,6 @@ export async function GET(request: Request) {
           queryParams.append('sort', 'distance');
         }
 
-        console.log(`Fetching with params: ${queryParams.toString()}`);
         
         const response = await fetch(`https://api.petfinder.com/v2/animals?${queryParams.toString()}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -302,10 +291,6 @@ export async function GET(request: Request) {
         pagination = data.pagination;
       }
 
-      // Log the raw API response to see what we're getting
-      console.log('Total animals fetched:', animals.length);
-      console.log('Sample animals:', JSON.stringify(animals.slice(0, 2), null, 2));
-
       // Use a Map to deduplicate pets by ID
       const uniquePetsMap = new Map<number, SimplifiedPet>();
       
@@ -319,12 +304,6 @@ export async function GET(request: Request) {
         // Handle the type object with name property correctly
         const petType = pet.type && pet.type.name ? pet.type.name : '';
         
-        // When debugging, log each pet's photos
-        if (pet.photos && pet.photos.length > 0) {
-          console.log(`Pet ${pet.id} has ${pet.photos.length} photos. First photo medium URL: ${pet.photos[0]?.medium || 'undefined'}`);
-        } else {
-          console.log(`Pet ${pet.id} has no photos`);
-        }
         
         uniquePetsMap.set(pet.id, {
           id: pet.id,
@@ -341,20 +320,18 @@ export async function GET(request: Request) {
       // Convert the Map to an array
       const simplifiedPets = Array.from(uniquePetsMap.values());
 
-      // Just return all pets without filtering for photos now
-      console.log(`Total pets after simplification and deduplication: ${simplifiedPets.length}`);
     
       return NextResponse.json({ 
         pets: simplifiedPets,
         pagination: pagination
       });
     } catch (error) {
-      console.error('Error fetching pets:', error);
+
       return NextResponse.json({ error: 'Failed to fetch pets' }, { status: 500 });
     }
 
   } catch (error) {
-    console.error('Error fetching pets:', error);
+
     return NextResponse.json({ error: 'Failed to fetch pets' }, { status: 500 });
   }
 }

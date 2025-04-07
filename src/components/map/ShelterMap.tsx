@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { saveToSessionStorage, getFromSessionStorage } from '@/lib/clientStorage';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -35,6 +35,36 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+
+
+  // Debounce function (utility)
+  const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    return (...args: Parameters<F>): void => {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(() => func(...args), waitFor);
+    };
+  };
+
+  // Debounced version of fitBounds/flyTo for smoother adjustments
+  const debouncedFitMapToBounds = useCallback(debounce((validShelters: Shelter[]) => {
+    if (!map.current) return;
+    if (validShelters.length > 1) {
+        const bounds = new mapboxgl.LngLatBounds();
+        validShelters.forEach(shelter => {
+            if (shelter.coordinates) {
+                bounds.extend(shelter.coordinates);
+            }
+        });
+        map.current.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 500 });
+    } else if (validShelters.length === 1) {
+        map.current.flyTo({ center: validShelters[0].coordinates, zoom: 12, duration: 500 });
+    }
+  }, 300), []); // Recreate if map instance changes (shouldn't often)
+  
 
   // Fetch Mapbox API key
   useEffect(() => {
@@ -59,7 +89,6 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
           }
         }
       } catch (err: any) {
-        console.error('Error initializing map:', err);
         setError(err.message || 'Failed to initialize map');
       } finally {
         setLoading(false);
@@ -75,6 +104,11 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
 
     mapboxgl.accessToken = mapboxKey;
 
+    if (map.current && map.current.isStyleLoaded()) {
+      setIsMapLoaded(true);
+      return;
+    }
+
     if (!map.current) {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -84,19 +118,31 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
       });
 
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+      map.current.on('load', () => {
+      setIsMapLoaded(true);
+    });
     }
 
     return () => {
-      if (map.current) {
+      if (map.current && typeof map.current.remove === 'function') {
         map.current.remove();
-        map.current = null;
       }
+      map.current = null;
+      setIsMapLoaded(false);
     };
   }, [mapboxKey]);
 
   // Update markers when shelters change
   useEffect(() => {
-    if (!map.current || !mapboxKey || !shelters.length) return;
+    if (!map.current || !isMapLoaded || !mapboxKey || !shelters.length){
+
+      if (markersRef.current.length > 0) {
+        markersRef.current.forEach(marker => marker.remove());
+        markersRef.current = [];
+      }
+      return;
+    }
 
     const updateMarkers = async () => {
       try {
@@ -149,14 +195,16 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
           el.style.backgroundImage = 'url(https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678111-map-marker-512.png)';
           el.style.backgroundSize = 'cover';
           el.style.cursor = 'pointer';
+          el.setAttribute('aria-label', `Shelter: ${shelter.name}`);
 
           // Create popup with shelter info
           const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-            <div style="max-width: 200px;">
-              <h3 style="margin: 0 0 5px; font-size: 16px;">${shelter.name}</h3>
-              <p style="margin: 0 0 3px; font-size: 12px;">${shelter.location}</p>
-              <p style="margin: 0 0 3px; font-size: 12px;">${shelter.contact}</p>
-              ${shelter.website ? `<a href="${shelter.website}" target="_blank" style="font-size: 12px;">Visit Website</a>` : ''}
+            <div style="max-width: 220px; font-family: sans-serif;">
+              <h3 style="margin: 0 0 5px; font-size: 15px; color: #333;">${shelter.name}</h3>
+              <p style="margin: 0 0 3px; font-size: 12px; color: #555;">${shelter.location}</p>
+              ${shelter.contact ? `<p style="margin: 0 0 3px; font-size: 12px; color: #555;">${shelter.contact}</p>` : ''}
+              ${shelter.website ? `<a href="${shelter.website.startsWith('http') ? shelter.website : `https://${shelter.website}`}" target="_blank" rel="noopener noreferrer" style="font-size: 12px; color: #007bff; display: block; margin-bottom: 8px; word-break: break-all;">Visit Website</a>` : ''}
+              <button data-shelter-id="${shelter.id}" class="popup-details-button" style="margin-top: 5px; padding: 4px 10px; font-size: 12px; background-color: #f97316; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%;">View Details</button>
             </div>
           `);
 
@@ -166,45 +214,13 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
             .setPopup(popup)
             .addTo(map.current!);
 
-          // Add click event to marker
-          el.addEventListener('click', () => {
-            if (onShelterSelect) {
-              onShelterSelect(shelter.id);
-            }
-          });
-
           // Store marker reference for cleanup
           markersRef.current.push(marker);
         });
 
-        // Fit map to show all markers if we have multiple
-        if (validShelters.length > 1 && map.current) {
-          const bounds = new mapboxgl.LngLatBounds();
-          validShelters.forEach(shelter => {
-            if (shelter.coordinates) {
-              bounds.extend(shelter.coordinates);
-            }
-          });
+        debouncedFitMapToBounds(validShelters);
 
-          map.current.fitBounds(bounds, {
-            padding: 50,
-            maxZoom: 15,
-          });
-        } else if (validShelters.length === 1 && map.current) {
-          // If only one valid shelter, center the map on its coordinates
-          map.current.flyTo({
-            center: validShelters[0].coordinates,
-            zoom: 12, // Adjust zoom level as needed
-          });
-        } else {
-          // If no valid shelters, zoom out to show the whole world
-          map.current.flyTo({
-            center: [-98.5795, 39.8283], // US center
-            zoom: 4,
-          });
-        }
       } catch (err: any) {
-        console.error('Error updating markers:', err);
         setError(err.message || 'Failed to update markers');
       }
     };
@@ -215,7 +231,40 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
     } else {
       map.current?.on('load', updateMarkers);
     }
-  }, [shelters, mapboxKey, onShelterSelect]);
+  }, [shelters, mapboxKey, isMapLoaded]);
+
+  // Handle click events on shelter markers
+  useEffect(() => {
+    const mapInstance = map.current;
+    if (!mapInstance || !isMapLoaded || !onShelterSelect) return;
+
+    const mapContainerElement = mapInstance.getContainer();
+
+    const handlePopupClick = (e: MouseEvent) => {
+      const button = (e.target as HTMLElement).closest('.popup-details-button');
+
+      if (button && button.hasAttribute('data-shelter-id')) {
+        const shelterId = button.getAttribute('data-shelter-id');
+        if (shelterId) {
+          onShelterSelect(shelterId);
+
+           const openPopup = mapContainerElement.querySelector('.mapboxgl-popup');
+           if (openPopup) {
+               openPopup.remove();
+           }
+        }
+      }
+    };
+
+    // Add the delegated event listener to the map container
+    mapContainerElement.addEventListener('click', handlePopupClick);
+
+
+    return () => {
+      mapContainerElement.removeEventListener('click', handlePopupClick);
+
+    };
+  }, [onShelterSelect, isMapLoaded]);
 
   return (
     <div className="relative w-full h-full">

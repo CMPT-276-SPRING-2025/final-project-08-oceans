@@ -7,8 +7,6 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import DirectionMap from './DirectionMap'; // Import DirectionMap
 
 export default function ShelterDetailMap({ shelter }) {
-  const mapContainer = useRef(null);
-  const map = useRef(null);
   const [mapboxKey, setMapboxKey] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,7 +35,6 @@ export default function ShelterDetailMap({ shelter }) {
           throw new Error('Failed to get Mapbox API key');
         }
       } catch (err) {
-        console.error('Error getting Mapbox key:', err);
         setError(err.message || 'Failed to load map');
       }
     };
@@ -45,9 +42,9 @@ export default function ShelterDetailMap({ shelter }) {
     getMapboxKey();
   }, []);
 
-  // Geocode the shelter address and initialize map
+  // Geocode the shelter address
   useEffect(() => {
-    if (!mapboxKey || !mapContainer.current || !shelter) return;
+    if (!mapboxKey || !shelter) return;
     
     const geocodeShelterAddress = async () => {
       try {
@@ -133,22 +130,63 @@ export default function ShelterDetailMap({ shelter }) {
 
         // Note: Event listener for the button will be handled via delegation below
       } catch (err) {
-        console.error('Error initializing map:', err);
-        setError(err.message || 'Failed to load map');
+        setError(err.message || 'Failed to determine location');
+        setCoordinates(null);
       } finally {
         setLoading(false);
       }
     };
     
     geocodeShelterAddress();
-    
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
+  
+  }, [mapboxKey, shelter]);
+
+  // Initialize the static map
+  useEffect(() => {
+
+    if (!coordinates || !mapboxKey || staticMapUrl) {
+        // If we have coordinates & key, but maybe loading is still true from key fetch, stop it.
+        if (coordinates && mapboxKey && loading) setLoading(false);
+        return;
+    }
+
+    const fetchStaticMap = async () => {
+      // setLoading(true); // Set loading true specifically for this fetch step
+      setError(null); // Clear previous errors before fetching URL
+
+      try {
+        const lon = coordinates[0];
+        const lat = coordinates[1];
+        // Construct URL for the API route
+        const apiUrl = `/api/mapbox?action=staticmap&lon=${lon}&lat=${lat}`;
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Failed to fetch static map URL: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.staticMapURL) {
+          setStaticMapUrl(data.staticMapURL);
+        } else {
+          throw new Error('Static map URL not found in API response');
+        }
+
+      } catch (err) {
+        setError(err.message || 'Failed to load map image');
+        setStaticMapUrl(null); 
+      } finally {
+        setLoading(false);
       }
     };
-  }, [mapboxKey, shelter]);
+
+     if (coordinates && mapboxKey) {
+        fetchStaticMap();
+     }
+
+  }, [coordinates, mapboxKey, staticMapUrl]);
 
   // Callback to close the directions popup
   const handleCloseDirections = useCallback(() => {

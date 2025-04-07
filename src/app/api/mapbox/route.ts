@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { mapboxCache } from '@/lib/mapboxCache';
 
 const MAPBOX_BASE_URL = 'https://api.mapbox.com';
 const GEOCODING_ENDPOINT = '/geocoding/v5/mapbox.places';
 const DIRECTIONS_ENDPOINT = '/directions/v5'; // Remove trailing /mapbox
+
 
 const NAVIGATION_PROFILES = {
   driving: 'mapbox/driving',
@@ -20,11 +22,6 @@ type NavigationRequest = {
   mode: 'driving' | 'walking' | 'cycling';
   waypoints?: string[];
 };
-
-const cache = new Map<string, any>();
-
-// Export cache for testing purposes ONLY
-export const _test_clearMapboxCache = process.env.NODE_ENV === 'test' ? () => cache.clear() : undefined;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -48,13 +45,13 @@ export async function GET(request: NextRequest) {
           );
         }
         
-        const cachedResult = cache.get(`geocode:${address}`);
+        const cachedResult = mapboxCache.get(`geocode:${address}`);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
         
         const result = await geocodeAddress(address);
-        cache.set(`geocode:${address}`, result);
+        mapboxCache.set(`geocode:${address}`, result);
         return NextResponse.json(result);
       }
       
@@ -97,7 +94,50 @@ export async function GET(request: NextRequest) {
         cache.set(cacheKey, result);
         return NextResponse.json(result);
       }
-      
+      case 'staticmap': {
+        const lonStr = searchParams.get('lon');
+        const latStr = searchParams.get('lat');
+        const zoomStr = searchParams.get('zoom') || '14';
+        const widthStr = searchParams.get('width') || '600';
+        const heightStr = searchParams.get('height') || '400';
+        const markerColor = searchParams.get('markerColor') || 'f97316';
+        const markerSize = searchParams.get('markerSize') || 'm';
+
+        if (!lonStr || !latStr) {
+          return NextResponse.json(
+            { error: 'Longitude and latitude parameters are required' },
+            { status: 400 }
+          );
+        }
+
+        const lon = parseFloat(lonStr);
+        const lat = parseFloat(latStr);
+        const zoom = parseInt(zoomStr, 10);
+        const width = parseInt(widthStr, 10);
+        const height = parseInt(heightStr, 10);
+
+        if (isNaN(lon) || isNaN(lat) || isNaN(zoom) || isNaN(width) || isNaN(height)) {
+          return NextResponse.json(
+            { error: 'Invalid parameters' },
+            { status: 400 }
+          );
+        }
+
+        const cacheKey = `staticmap:${lon}:${lat}:${zoom}:${width}:${height}:${markerSize}:${markerColor}`;
+        const cachedResult = mapboxCache.get(cacheKey);
+        if (cachedResult) {
+          return NextResponse.json(cachedResult);
+        }
+
+        const markerOverlay = `pin-${markerSize}-s+${markerColor}(${lon},${lat})`;
+
+        const url = `${MAPBOX_BASE_URL}${STATIC_IMAGE_ENDPOINT}/${markerOverlay}/${lon},${lat},${zoom}/${width}x${height}@2x?access_token=${process.env.MAPBOX_KEY}&attribution=false&logo=false`;
+
+        const result = { staticMapURL: url };
+        mapboxCache.set(cacheKey, result);
+        return NextResponse.json(result);
+      }
+
       default:
         return NextResponse.json({
           mapboxKey: process.env.MAPBOX_KEY,
@@ -140,7 +180,7 @@ export async function POST(request: NextRequest) {
         // Use Promise.allSettled to handle individual geocoding errors
         const settledResults = await Promise.allSettled(
           addresses.map(async (address) => {
-            const cachedResult = cache.get(`geocode:${address}`);
+            const cachedResult = mapboxCache.get(`geocode:${address}`);
             if (cachedResult) {
               return cachedResult; // Return cached result if available
             }
@@ -175,13 +215,13 @@ export async function POST(request: NextRequest) {
           );
         }
         
-        const cachedResult = cache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
+        const cachedResult = mapboxCache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
         
         const result = await getDirections(origin, destination, mode, waypoints);
-        cache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
+        mapboxCache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
         return NextResponse.json(result);
       }
       

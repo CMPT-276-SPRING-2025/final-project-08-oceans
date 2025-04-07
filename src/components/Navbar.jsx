@@ -3,13 +3,20 @@ import { assets } from '@/assets/assets'
 import Image from 'next/image'
 
 const Navbar = () => {
+
   return (
     <nav className="w-full fixed top-0 left-0 right-0 z-50
     px-5 lg:px-8 xl:px-[8%] py-4 flex items-center bg-orange-50 text-gray-900 shadow-md h-2/23 ">
 
         <div className="flex items-center pr-20 ">
             <a href="/">
-                <Image src={assets.icon_paw} alt="Paw" />
+                <Image 
+                src={assets.icon_paw} 
+                alt="Paw" 
+                width={32}
+                height={32}
+                priority
+                />
             </a>
         </div>
 

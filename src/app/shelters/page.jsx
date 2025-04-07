@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,35 +59,30 @@ const Shelters = () => {
         const cachedShelters = getFromSessionStorage(cacheKey);
         
         if (cachedShelters) {
-          console.log('Using cached shelter data');
+
           setShelters(cachedShelters);
           setLoading(false);
           return;
         }
         
-        console.log('Fetching shelter data from API');
+
         const response = await fetch('/api/shelters');
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Fetched shelters:', { 
-          shelterCount: data.shelters?.length || 0,
-          pagination: data.pagination,
-          firstShelter: data.shelters && data.shelters.length > 0 ? data.shelters[0] : 'No shelters found'
-        });
         
         if (data.shelters && Array.isArray(data.shelters)) {
           // Save to session storage (cache for 30 minutes)
           saveToSessionStorage(cacheKey, data.shelters, 30);
           setShelters(data.shelters);
         } else {
-          console.error('Invalid shelters data format:', data);
+
           setShelters([]);
         }
       } catch (err) {
-        console.error('Error fetching shelters:', err);
+
         setError(err.message);
         setShelters([]);
       } finally {
@@ -119,14 +114,14 @@ const Shelters = () => {
       const cachedResults = getFromSessionStorage(cacheKey);
       
       if (cachedResults) {
-        console.log(`Using cached shelter search results for: ${cacheKey}`);
+
         setShelters(cachedResults);
         setLoading(false);
         return;
       }
       
       const url = `/api/shelters${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      console.log(`Searching shelters with URL: ${url}`);
+
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -140,11 +135,11 @@ const Shelters = () => {
         saveToSessionStorage(cacheKey, data.shelters, 15);
         setShelters(data.shelters);
       } else {
-        console.error('Invalid shelters data format:', data);
+
         setShelters([]);
       }
     } catch (err) {
-      console.error('Error searching shelters:', err);
+
       setError(err.message);
       setShelters([]);
     } finally {
@@ -170,21 +165,28 @@ const Shelters = () => {
     }, 600);
   };
 
-  const handleShelterSelect = (shelterId) => {
-    setSelectedShelterId(shelterId);
-    
-    // Scroll to the selected shelter card
-    const shelterCard = document.getElementById(`shelter-${shelterId}`);
-    if (shelterCard) {
-      shelterCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
-      // Highlight the card
-      shelterCard.classList.add('ring-2', 'ring-orange-500');
-      setTimeout(() => {
-        shelterCard.classList.remove('ring-2', 'ring-orange-500');
-      }, 2000);
+  const handleShelterSelect = useCallback((shelterId) => {
+    setSelectedShelterId(shelterId); // Update state if needed
+
+    // --- Scroll Logic ---
+    const shelterCardId = `shelter-${shelterId}`;
+    const shelterCard = document.getElementById(shelterCardId);
+    if (shelterCard) {
+        shelterCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Optional: Highlighting triggered by parent state change (or keep highlight here)
+        shelterCard.classList.add('ring-2', 'ring-orange-500', 'transition-shadow', 'duration-1500');
+        setTimeout(() => {
+            const currentCard = document.getElementById(shelterCardId);
+            currentCard?.classList.remove('ring-2', 'ring-orange-500');
+        }, 2000);
+    } else {
     }
-  };
+
+  }, []);
+
+    
 
   return (
     <div className="w-full mx-auto p-20 pt-[100px] 2xl:pt-[150px]">

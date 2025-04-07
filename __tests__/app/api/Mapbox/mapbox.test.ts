@@ -1,6 +1,7 @@
-import { GET, POST, _test_clearMapboxCache } from '../../../../src/app/api/mapbox/route';
+import { GET, POST } from '../../../../src/app/api/mapbox/route';
 import { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { clearMapboxCacheForTesting } from '@/lib/mapboxCache';
 
 // We will spy on NextResponse.json instead of mocking it globally
 import * as NextResponseModule from 'next/server';
@@ -28,9 +29,8 @@ describe('Mapbox API Route', () => {
     // Restore any spies if they were created in tests
     jest.restoreAllMocks();
     // Clear the internal cache before each test
-    if (_test_clearMapboxCache) {
-      _test_clearMapboxCache();
-    }
+    clearMapboxCacheForTesting();
+    
     process.env.MAPBOX_KEY = 'test-mapbox-key'; // Set a mock key for tests
   });
 

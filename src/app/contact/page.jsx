@@ -13,7 +13,7 @@ const ContactPage = () => {
     setResult("Sending....");
     const formData = new FormData(event.target);
 
-    formData.append("access_key", "d0a50088-021c-4426-9935-cdfe43445bfb");
+    formData.append("access_key", "");
 
     const response = await fetch("https://api.web3forms.com/submit", {
       method: "POST",
@@ -26,13 +26,12 @@ const ContactPage = () => {
       setResult("Form Submitted Successfully");
       event.target.reset();
     } else {
-      console.log("Error", data);
       setResult(data.message);
     }
   };
   
   return (
-    <div className="flex flex-col justify-center items-center  3xl:pt-[280px] lg:pt-[130px]">
+    <div className="flex flex-col justify-center items-center 3xl:pt-[280px] lg:pt-[130px] pb-20 min-h-screen">
       {/* Centered Form Container */}
       <div className="w-full max-w-md sm:max-w-lg md:max-w-xl bg-[#FDE7CB] p-6 md:p-8 rounded-2xl hover:shadow-xl transition duration-400">
         <h2 className="text-center text-2xl md:text-3xl font-semibold mb-5">Send Us a Message!</h2>
@@ -78,17 +77,17 @@ const ContactPage = () => {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center pt-4">
             <button 
               type="submit" 
-              className="bg-orange-500 text-white font-semibold py-3 px-6 rounded-full shadow-md hover:bg-orange-600 transition w-4/12"
+              className="bg-orange-500 text-white font-semibold py-3 px-6 rounded-full shadow-md hover:bg-orange-600 transition w-4/12 "
             >
               Submit
             </button>
           </div>
 
           {/* Submission Result Message */}
-          <p className='text-center text-md font-medium text-gray-700'>{result}</p>
+          <p className='text-center text-md font-medium text-gray-700 pt-4'>{result}</p>
         </form>
       </div>
     </div>
