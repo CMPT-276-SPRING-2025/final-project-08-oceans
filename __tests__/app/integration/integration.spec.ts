@@ -54,4 +54,19 @@ test.describe('Integration Tests', () => {
       await expect(page.locator('h2')).toContainText('Search nearby pet shelters');
     });
   });
+
+  test.describe('Get individual pet by ID', () => {
+    test('should display the individual pet details', async ({ page }) => {
+      await page.goto('/pets_all');
+      await page.locator('button:text("Adopt me!")').nth(1).click();
+    });
+  });
+
+  test.describe('Map on shelter page', () => {
+    test('should display the map correctly', async ({ page }) => {
+      await page.goto('/shelters');
+      await page.locator('img').first().click();
+      //Further testing will be added for navigation
+    });
+  });
 });
