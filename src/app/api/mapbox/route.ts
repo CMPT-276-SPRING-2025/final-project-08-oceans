@@ -305,12 +305,37 @@ async function getDirections(
   const response = await fetch(url);
   
   if (!response.ok) {
-    const errorBody = await response.text(); // Try to get error body
-    console.error(`Mapbox Directions API Error: ${response.status} ${response.statusText}`, errorBody); // Log status and body
-    throw new Error(`Directions error: ${response.statusText}`); // Keep original error throw for client
+    let errorBody = '';
+    let errorMessage = `Directions API Error: ${response.status}`; // Default message with status code
+    try {
+      errorBody = await response.text(); // Try to get error body
+      const parsedBody = JSON.parse(errorBody);
+      // Prioritize message from parsed body
+      if (parsedBody.message) {
+        errorMessage += ` - ${parsedBody.message}`;
+      } else if (response.statusText && response.statusText.toLowerCase() !== 'unknown') {
+         // Fallback to statusText only if it's not 'Unknown' (case-insensitive)
+         errorMessage += ` - ${response.statusText}`;
+      }
+    } catch (e) {
+      // Ignore parsing errors, stick with default message or statusText (if not 'Unknown')
+       if (response.statusText && response.statusText.toLowerCase() !== 'unknown') {
+         errorMessage += ` - ${response.statusText}`;
+       }
+    }
+    console.error(`Mapbox Directions API Error: ${response.status} ${response.statusText}`, errorBody); // Log status and original body
+    throw new Error(errorMessage); // Throw the more detailed error message
   }
   
   const data = await response.json();
+  console.log('Mapbox Directions API Success Response Data:', JSON.stringify(data, null, 2)); // Log successful data
+  
+  // Check for NoRoute code even in successful responses
+  if (data.code === 'NoRoute') {
+     console.warn('Mapbox returned success status but NoRoute code.');
+     // Optionally, you could throw an error here too, or let the frontend handle the empty routes array
+     // throw new Error('Directions API Error: No route found');
+  }
   
   return {
     routes: data.routes.map((route: any) => ({
