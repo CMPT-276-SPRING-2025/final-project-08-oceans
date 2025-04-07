@@ -86,8 +86,10 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationN
       // Use the API route to get directions
       const params = new URLSearchParams({
         action: 'navigation',
-        origin: startLocationInput,
-        destination: endLocationName, // Use the name/address for the API
+        origin: startLocationInput, // Origin still needs geocoding
+        // Pass destination coordinates directly
+        destinationCoords: `${endLocation.longitude},${endLocation.latitude}`,
+        destinationName: endLocationName, // Pass name separately for potential display
         mode: mode,
       });
 
