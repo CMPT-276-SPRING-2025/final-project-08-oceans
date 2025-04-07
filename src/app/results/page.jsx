@@ -5,12 +5,13 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { LocationSearchInput } from '@/components/ui/locationSeachInput';
-
+import { LoadingBar } from '@/components/ui/loading-bar'; // Import LoadingBar
 const ResultsPage = () => {
   const [pets, setPets] = useState([]);
   const [fallbackMessage, setFallbackMessage] = useState('');
   const [pageTitle, setPageTitle] = useState('Your Perfect Pet Awaits! 🐾');
   const [location, setLocation] = useState(''); // New state for location filter
+  const [loading, setLoading] = useState(true); // Initialize loading state to true
   const router = useRouter();
 
   // Initial loading from localStorage (pets, petType, petSubType, etc.)
@@ -49,6 +50,7 @@ const ResultsPage = () => {
     } else if (petType === 'bird') {
       setPageTitle('Birds Available for Adoption🐣');
     }
+    setLoading(false); // Set loading to false after initial load
   }, []);
 
   // New function to search pets by location and quiz filters
@@ -67,11 +69,13 @@ const ResultsPage = () => {
       url += `&location=${encodeURIComponent(location)}`;
     }
 
+    setLoading(true); // Set loading to true before fetching
     try {
       const res = await fetch(url);
       const data = await res.json();
       if (data?.pets?.length) {
-        setPets(data.pets);
+        const petsWithPhotos = data.pets.filter(pet => pet.photos && pet.photos.length > 0);
+        setPets(petsWithPhotos);
         setFallbackMessage('');
       } else {
         setPets([]);
@@ -80,11 +84,17 @@ const ResultsPage = () => {
     } catch (err) {
       console.error('Error fetching pets by location:', err);
       setFallbackMessage('Something went wrong. Please try again later.');
+    } finally {
+      setLoading(false); // Set loading to false after fetch completes
     }
   };
 
   return (
     <div className="w-full text-center min-h-screen pt-28 px-10">
+      <LoadingBar
+        isLoading={loading}
+        message={loading ? "Loading Pets..." : ""} // Change message slightly
+      />
       <h2 className="text-3xl font-semibold mb-4">{pageTitle}</h2>
 
       {fallbackMessage && (
@@ -144,12 +154,13 @@ const ResultsPage = () => {
                 <Button
                   className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-6 text-md"
                   onClick={() => {
+                    setLoading(true); // Set loading to true
                     // Optional: store filters if you want them available on details page
                     localStorage.setItem('petFilters', JSON.stringify({
                       type: localStorage.getItem('petType') || '',
                       subType: localStorage.getItem('petSubType') || ''
                     }));
-                    const backUrl = encodeURIComponent(window.location.pathname + window.location.search); 
+                    const backUrl = encodeURIComponent(window.location.pathname + window.location.search);
                     router.push(`/pets/${pet.id}?backURL=${backUrl}`);
                   }}
                 >
