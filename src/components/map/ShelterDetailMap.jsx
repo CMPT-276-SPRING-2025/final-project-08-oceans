@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react'; // Add useCallback
 import { saveToSessionStorage, getFromSessionStorage } from '@/lib/clientStorage';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import DirectionMap from './DirectionMap'; // Import DirectionMap
 
 export default function ShelterDetailMap({ shelter }) {
   const [mapboxKey, setMapboxKey] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [coordinates, setCoordinates] = useState(null);
-  const [staticMapUrl, setStaticMapUrl] = useState(null);
+  const [coordinates, setCoordinates] = useState(null); // [longitude, latitude]
+  const [showDirectionsPopup, setShowDirectionsPopup] = useState(false); // State for popup visibility
 
   // Fetch Mapbox API key
   useEffect(() => {
@@ -79,7 +82,53 @@ export default function ShelterDetailMap({ shelter }) {
         }
         
         setCoordinates(shelterCoordinates);
+        
+        // Initialize the map
+        mapboxgl.accessToken = mapboxKey;
+        
+        if (map.current) map.current.remove();
+        
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v11',
+          center: shelterCoordinates,
+          zoom: 14,
+        });
+        
+        // Add navigation controls
+        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        
+        // Add marker
+        const popupContent = document.createElement('div');
+        popupContent.innerHTML = `
+          <div style="max-width: 200px; padding: 10px;">
+            <h3 style="margin: 0 0 8px; font-weight: 600;">${shelter.name}</h3>
+            <p style="margin: 0 0 8px; font-size: 13px;">${shelter.location}</p>
+            <button id="get-directions" style="background-color: #F26A21; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; width: 100%;">
+              Get Directions
+            </button>
+          </div>
+        `;
+        
+        const popup = new mapboxgl.Popup({ offset: 25 })
+          .setDOMContent(popupContent);
+        
+        new mapboxgl.Marker({ color: '#F26A21' })
+          .setLngLat(shelterCoordinates)
+          .setPopup(popup)
+          .addTo(map.current)
+          .togglePopup(); // Show popup by default
+        
+        // Function to handle opening the directions popup
+        const handleGetDirectionsClick = () => {
+          // Close the mapbox popup first if it's open
+          if (popup.isOpen()) {
+            popup.remove();
+          }
+          setShowDirectionsPopup(true);
+        };
 
+        // Note: Event listener for the button will be handled via delegation below
       } catch (err) {
         setError(err.message || 'Failed to determine location');
         setCoordinates(null);
@@ -139,6 +188,44 @@ export default function ShelterDetailMap({ shelter }) {
 
   }, [coordinates, mapboxKey, staticMapUrl]);
 
+  // Callback to close the directions popup
+  const handleCloseDirections = useCallback(() => {
+    setShowDirectionsPopup(false);
+  }, []);
+
+  // Effect for handling clicks on the directions button via event delegation
+  useEffect(() => {
+    const mapNode = mapContainer.current;
+
+    const handleClick = (event) => {
+      // Check if the clicked element is the button we care about
+      if (event.target.matches('#get-directions')) {
+        // Check if it's inside a mapbox popup
+        if (event.target.closest('.mapboxgl-popup')) {
+          // Find the associated popup instance if needed, though we might not need it now
+          // const popupElement = event.target.closest('.mapboxgl-popup');
+          // Close the mapbox popup first (optional, but good UX)
+          const openPopups = map.current?.getContainer().querySelectorAll('.mapboxgl-popup');
+          openPopups?.forEach(p => {
+            // This is a bit hacky way to potentially close it, might need refinement
+            // Or find the specific popup instance associated with the marker if possible
+            p.remove();
+          });
+
+          setShowDirectionsPopup(true);
+        }
+      }
+    };
+
+    // Add listener to the map container
+    mapNode?.addEventListener('click', handleClick);
+
+    // Cleanup: remove listener when component unmounts
+    return () => {
+      mapNode?.removeEventListener('click', handleClick);
+    };
+  }, []); // Run only once on mount
+
   return (
     <div className="relative w-full h-full">
       {loading && (
@@ -159,12 +246,47 @@ export default function ShelterDetailMap({ shelter }) {
         </div>
       )}
       
-      {!loading && !error && staticMapUrl && (
-        <img
-          key={staticMapUrl}
-          src={staticMapUrl}
-          alt={`Map showing location of ${shelter?.name || 'the shelter'}`}
-          className="w-full h-full rounded-lg object-cover"
+      <div ref={mapContainer} className="w-full h-full rounded-lg" />
+
+      {/* Directions Popup Modal */}
+      {showDirectionsPopup && coordinates && mapboxKey && (
+        <div style={{
+          position: 'fixed', // Use fixed to overlay the whole page
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 1000, // Ensure it's above other content
+          backgroundColor: 'white',
+          padding: '20px', // Add some padding around the map component
+          borderRadius: '10px',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+          width: 'clamp(300px, 80vw, 800px)', // Responsive width
+          height: 'clamp(400px, 80vh, 700px)', // Responsive height
+          display: 'flex', // Use flex for centering the inner map
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          <DirectionMap
+            mapboxToken={mapboxKey}
+            endLocation={{ longitude: coordinates[0], latitude: coordinates[1] }} // Pass coordinates correctly
+            endLocationName={shelter.name}
+            onClose={handleCloseDirections} // Pass the close handler
+          />
+        </div>
+      )}
+      {/* Backdrop */}
+      {showDirectionsPopup && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 999, // Below the popup but above other content
+          }}
+          onClick={handleCloseDirections} // Close popup when clicking backdrop
         />
       )}
     </div>

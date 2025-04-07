@@ -3,8 +3,8 @@ import { mapboxCache } from '@/lib/mapboxCache';
 
 const MAPBOX_BASE_URL = 'https://api.mapbox.com';
 const GEOCODING_ENDPOINT = '/geocoding/v5/mapbox.places';
-const DIRECTIONS_ENDPOINT = '/directions/v5/mapbox';
-const STATIC_IMAGE_ENDPOINT = '/styles/v1/mapbox/streets-v11/static';
+const DIRECTIONS_ENDPOINT = '/directions/v5'; // Remove trailing /mapbox
+
 
 const NAVIGATION_PROFILES = {
   driving: 'mapbox/driving',
@@ -56,13 +56,16 @@ export async function GET(request: NextRequest) {
       }
       
       case 'navigation': {
-        const origin = searchParams.get('origin');
-        const destination = searchParams.get('destination');
+        const origin = searchParams.get('origin'); // String address
+        const destination = searchParams.get('destination'); // String address (might be null if coords provided)
+        const destinationCoordsParam = searchParams.get('destinationCoords'); // Optional coords string "lng,lat"
+        const destinationName = searchParams.get('destinationName'); // Optional name if coords provided
         const mode = searchParams.get('mode') as 'driving' | 'walking' | 'cycling' || 'driving';
         
-        if (!origin || !destination) {
+        // Require origin address AND (destination address OR destination coordinates)
+        if (!origin || (!destination && !destinationCoordsParam)) {
           return NextResponse.json(
-            { error: 'Origin and destination parameters are required' },
+            { error: 'Origin address and either destination address or destination coordinates are required' },
             { status: 400 }
           );
         }
@@ -70,13 +73,25 @@ export async function GET(request: NextRequest) {
         const waypointsParam = searchParams.get('waypoints');
         const waypoints = waypointsParam ? waypointsParam.split('|') : [];
         
-        const cachedResult = mapboxCache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
+        // Use destinationCoordsParam if available, otherwise use destination address
+        const destinationIdentifier = destinationCoordsParam || destination!;
+        const cacheKey = `navigation:${origin}:${destinationIdentifier}:${mode}:${waypoints.join('|')}`;
+        
+        const cachedResult = cache.get(cacheKey);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
         
-        const result = await getDirections(origin, destination, mode, waypoints);
-        mapboxCache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
+        const result = await getDirections(
+          origin,
+          destination, // Pass original destination address/name if available
+          mode,
+          waypoints,
+          undefined, // No origin coords provided
+          destinationCoordsParam, // Pass destination coords string if available
+          destinationName // Pass destination name if available
+        );
+        cache.set(cacheKey, result);
         return NextResponse.json(result);
       }
       case 'staticmap': {
@@ -129,9 +144,11 @@ export async function GET(request: NextRequest) {
           message: 'Use this token for client-side map rendering'
         });
     }
-  } catch (error) {
+  } catch (error: any) { // Catch specific error type
+    console.error('Mapbox API GET error:', error);
     return NextResponse.json(
-      { error: 'Error processing mapbox request' },
+      // Return the specific error message
+      { error: error.message || 'Error processing mapbox request' },
       { status: 500 }
     );
   }
@@ -160,18 +177,30 @@ export async function POST(request: NextRequest) {
           );
         }
         
-        const results = await Promise.all(
+        // Use Promise.allSettled to handle individual geocoding errors
+        const settledResults = await Promise.allSettled(
           addresses.map(async (address) => {
             const cachedResult = mapboxCache.get(`geocode:${address}`);
             if (cachedResult) {
-              return cachedResult;
+              return cachedResult; // Return cached result if available
             }
             
-            const result = await geocodeAddress(address);
-            mapboxCache.set(`geocode:${address}`, result);
+            const result = await geocodeAddress(address); // Attempt geocoding
+            cache.set(`geocode:${address}`, result); // Cache successful result
             return result;
           })
         );
+
+        // Process settled results: extract fulfilled values, log rejected reasons
+        const results = settledResults.map((result, index) => {
+          if (result.status === 'fulfilled') {
+            return result.value; // Successfully geocoded
+          } else {
+            console.error(`Failed to geocode address "${addresses[index]}":`, result.reason);
+            // Return a structure indicating failure for this address
+            return { query: addresses[index], features: [], error: result.reason?.message || 'Geocoding failed' };
+          }
+        });
         
         return NextResponse.json({ results });
       }
@@ -202,9 +231,11 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
     }
-  } catch (error) {
+  } catch (error: any) { // Catch specific error type
+    console.error('Mapbox API POST error:', error);
     return NextResponse.json(
-      { error: 'Error processing mapbox request' },
+      // Return the specific error message
+      { error: error.message || 'Error processing mapbox request' },
       { status: 500 }
     );
   }
@@ -214,13 +245,24 @@ async function geocodeAddress(address: string) {
   const encodedAddress = encodeURIComponent(address);
   const url = `${MAPBOX_BASE_URL}${GEOCODING_ENDPOINT}/${encodedAddress}.json?access_token=${process.env.MAPBOX_KEY}`;
   
+  console.log(`Geocoding address: "${address}" with URL: ${url}`); // Log geocode request
+
   const response = await fetch(url);
   
   if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(`Geocoding error for "${address}": ${response.status} ${response.statusText}`, errorBody);
     throw new Error(`Geocoding error: ${response.statusText}`);
   }
   
   const data = await response.json();
+  console.log(`Geocoding result for "${address}":`, JSON.stringify(data.features.map((f: any) => ({ // Log key details
+      id: f.id,
+      place_name: f.place_name,
+      coordinates: f.geometry.coordinates,
+      place_type: f.place_type,
+      relevance: f.relevance
+  })), null, 2));
   
   return {
     query: address,
@@ -235,24 +277,53 @@ async function geocodeAddress(address: string) {
 }
 
 async function getDirections(
-  origin: string,
-  destination: string,
+  origin: string, // Address string
+  destination: string | null, // Address string (optional if coords provided)
   mode: 'driving' | 'walking' | 'cycling' = 'driving',
-  waypoints: string[] = []
+  waypoints: string[] = [],
+  originCoordsParam?: string, // Optional "lng,lat" string
+  destinationCoordsParam?: string, // Optional "lng,lat" string
+  destinationName?: string | null // Optional name if coords provided
 ) {
-  const originCoords = await geocodeAddress(origin);
-  const destinationCoords = await geocodeAddress(destination);
-  
-  const waypointCoords = waypoints.length > 0 
+  let originPoint: [number, number] | undefined;
+  let destPoint: [number, number] | undefined;
+  let finalDestinationName = destinationName || destination; // Use provided name or fallback to address
+
+  // Geocode origin or parse coords
+  if (originCoordsParam) {
+    const [lng, lat] = originCoordsParam.split(',').map(Number);
+    if (!isNaN(lng) && !isNaN(lat)) {
+      originPoint = [lng, lat];
+    } else {
+       throw new Error('Invalid origin coordinates format. Expected "longitude,latitude".');
+    }
+  } else {
+    const originGeocodeResult = await geocodeAddress(origin);
+    originPoint = originGeocodeResult.features[0]?.coordinates;
+    if (!originPoint) throw new Error(`Could not geocode origin address: ${origin}`);
+  }
+
+  // Geocode destination or parse coords
+  if (destinationCoordsParam) {
+     const [lng, lat] = destinationCoordsParam.split(',').map(Number);
+     if (!isNaN(lng) && !isNaN(lat)) {
+       destPoint = [lng, lat];
+     } else {
+        throw new Error('Invalid destination coordinates format. Expected "longitude,latitude".');
+     }
+  } else if (destination) {
+     const destinationGeocodeResult = await geocodeAddress(destination);
+     destPoint = destinationGeocodeResult.features[0]?.coordinates;
+     if (!destPoint) throw new Error(`Could not geocode destination address: ${destination}`);
+  } else {
+     // This case should be prevented by the GET handler check, but added for safety
+     throw new Error('Destination address or coordinates are required.');
+  }
+
+  // Geocode waypoints (if any)
+  const waypointCoords = waypoints.length > 0
     ? await Promise.all(waypoints.map(wp => geocodeAddress(wp)))
     : [];
-  
-  const originPoint = originCoords.features[0]?.coordinates;
-  const destPoint = destinationCoords.features[0]?.coordinates;
-  
-  if (!originPoint || !destPoint) {
-    throw new Error('Could not geocode origin or destination addresses');
-  }
   
   let coordinatesStr = `${originPoint[0]},${originPoint[1]}`;
   
@@ -269,13 +340,42 @@ async function getDirections(
   
   const url = `${MAPBOX_BASE_URL}${DIRECTIONS_ENDPOINT}/${profile}/${coordinatesStr}?alternatives=true&geometries=geojson&overview=full&steps=true&access_token=${process.env.MAPBOX_KEY}`;
   
+  console.log('Requesting Mapbox Directions URL:', url); // Log the URL
+  
   const response = await fetch(url);
   
   if (!response.ok) {
-    throw new Error(`Directions error: ${response.statusText}`);
+    let errorBody = '';
+    let errorMessage = `Directions API Error: ${response.status}`; // Default message with status code
+    try {
+      errorBody = await response.text(); // Try to get error body
+      const parsedBody = JSON.parse(errorBody);
+      // Prioritize message from parsed body
+      if (parsedBody.message) {
+        errorMessage += ` - ${parsedBody.message}`;
+      } else if (response.statusText && response.statusText.toLowerCase() !== 'unknown') {
+         // Fallback to statusText only if it's not 'Unknown' (case-insensitive)
+         errorMessage += ` - ${response.statusText}`;
+      }
+    } catch (e) {
+      // Ignore parsing errors, stick with default message or statusText (if not 'Unknown')
+       if (response.statusText && response.statusText.toLowerCase() !== 'unknown') {
+         errorMessage += ` - ${response.statusText}`;
+       }
+    }
+    console.error(`Mapbox Directions API Error: ${response.status} ${response.statusText}`, errorBody); // Log status and original body
+    throw new Error(errorMessage); // Throw the more detailed error message
   }
   
   const data = await response.json();
+  console.log('Mapbox Directions API Success Response Data:', JSON.stringify(data, null, 2)); // Log successful data
+  
+  // Check for NoRoute code even in successful responses
+  if (data.code === 'NoRoute') {
+     console.warn('Mapbox returned success status but NoRoute code.');
+     // Optionally, you could throw an error here too, or let the frontend handle the empty routes array
+     // throw new Error('Directions API Error: No route found');
+  }
   
   return {
     routes: data.routes.map((route: any) => ({
@@ -294,11 +394,12 @@ async function getDirections(
     })),
     waypoints: data.waypoints,
     origin: {
-      name: origin,
+      name: origin, // Keep original origin string
       coordinates: originPoint,
     },
     destination: {
-      name: destination,
+      name: finalDestinationName, // Use the determined destination name
+      // Removed duplicate name property
       coordinates: destPoint,
     },
     mode,
