@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { LoadingBar } from '@/components/ui/loading-bar'; // Import LoadingBar
 import energyDogBreeds from '@/app/pets/Quiz_Breed_questions/Energy Dog breeds.json';
 import hypoallergenicDogBreeds from '@/app/pets/Quiz_Breed_questions/Hypoellergenic-Dog-breeds.json';
 import energyCatBreeds from '@/app/pets/Quiz_Breed_questions/Energy-Cat-breeds.json';
@@ -18,6 +19,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
   const [selectedAnswers, setSelectedAnswers] = useState(Array(questions.length).fill(null));
   const router = useRouter();
   const [typeScores, setTypeScores] = useState({});
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const handleNext = () => {
     if (selectedAnswers[currentQuestion] !== null) {
@@ -39,7 +41,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     const updated = [...selectedAnswers];
     updated[currentQuestion] = answer;
     setSelectedAnswers(updated);
-  
+
     if (isLetUsDecide) {
       const types = Array.isArray(answer) ? answer : [answer];
       const newScores = { ...typeScores };
@@ -49,7 +51,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       setTypeScores(newScores);
     }
   };
-  
+
 
   const buildQueryFromAnswers = () => {
     const query = {};
@@ -139,18 +141,18 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
           type === 'fish' ? 'fish_breeds' :
           type === 'reptile' ? 'reptile_breeds' :
           'small_furry_rabbit_breeds';
-      
+
         if (key === 'breed') {
           const careOptions = careLevelMappings.care_level?.[category];
           const interactionOptions = interactionMappings.interaction_level?.[category];
-      
+
           // Match answer with care levels
           if (careOptions) {
             Object.values(careOptions).forEach(list => {
               list?.forEach(b => careSet.add(b));
             });
           }
-      
+
           // Match answer with interaction levels
           if (interactionOptions) {
             Object.values(interactionOptions).forEach(list => {
@@ -162,7 +164,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         }
       }
     });
-    
+
     if (type === 'dog') {
       if (dogCoatSet.size > 0) {
         // Find the intersection of dogBreedSet and dogCoatSet
@@ -220,13 +222,13 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       const answer = selectedAnswers[index];
 
       if (!key || !answer) return;
-  
+
       const skipKeys = ['size', 'breed'];
-  
+
       if (['bird', 'fish', 'reptile', 'small-pets'].includes(type)) {
         skipKeys.push('age');
       }
-  
+
       if (skipKeys.includes(key)) return;
       if (key === 'coat' && answer === 'hypoallergenic'){
         if (type === 'dog') {
@@ -258,31 +260,32 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         query[key] = answer;
       }
     });
-  
+
     return Object.entries(query)
     .flatMap(([k, v]) =>
       Array.isArray(v) ? v.map(val => `${k}=${encodeURIComponent(val)}`) : [`${k}=${encodeURIComponent(v)}`]
     )
     .join('&');
-  
+
   };
-  
+
 
   const fetchRecommendedPets = async () => {
     let chosenType = type;
-  
+
     if (isLetUsDecide) {
       const topType = Object.entries(typeScores).sort((a, b) => b[1] - a[1])[0]?.[0];
       if (!topType) {
         alert('Please answer all questions!');
+        setLoading(false); // Reset loading if validation fails
         return;
       }
       chosenType = topType;
     }
-  
+
     const query = buildQueryFromAnswers();
     let relaxedQuery = null;
-  
+
     const petfinderTypeMap = {
       reptile: { type: 'scales-fins-other', subType: 'reptile' },
       fish: { type: 'scales-fins-other', subType: 'fish' },
@@ -291,129 +294,144 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       dog: { type: 'dog' },
       cat: { type: 'cat' },
     };
-  
+
     const actualTypeInfo = petfinderTypeMap[chosenType] || { type: chosenType };
     const { type: actualType, subType } = actualTypeInfo;
-  
+
     let allPets = [];
-  
+    setLoading(true); // Set loading to true
+
     try {
-        const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${query}`);
-        const data = await res.json();
-        if (data?.pets?.length) {
-          allPets = data.pets;
-        }
-  
-      if (!allPets.length) {
-        relaxedQuery = buildRelaxedQuery();
-        const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${relaxedQuery}`);
-        const data = await res.json();
-        if (data?.pets?.length) {
-          allPets = data.pets;
-        }
+      const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${query}`);
+      const data = await res.json();
+      if (data?.pets?.length) {
+        allPets = data.pets;
       }
-  
+
+      if (!allPets.length) {
+        console.log("No pets found with strict query, trying relaxed query...");
+        relaxedQuery = buildRelaxedQuery();
+        const relaxedRes = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${relaxedQuery}`);
+        const relaxedData = await relaxedRes.json();
+        if (relaxedData?.pets?.length) {
+          console.log(`Found ${relaxedData.pets.length} pets with relaxed query.`);
+          allPets = relaxedData.pets;
+          localStorage.setItem('fallbackMessage', 'We couldn\'t find an exact match, but here are some similar pets!');
+        } else {
+          console.log("No pets found with relaxed query either.");
+          localStorage.removeItem('fallbackMessage'); // Clear any previous fallback message
+        }
+      } else {
+         localStorage.removeItem('fallbackMessage'); // Clear fallback if strict query worked
+      }
+
       if (allPets.length) {
         const uniquePets = Array.from(new Map(allPets.map(p => [p.id, p])).values());
-  
+
         localStorage.setItem('pets', JSON.stringify(uniquePets));
-        
         localStorage.setItem('petType', actualType);
         if (subType) {
           localStorage.setItem('petSubType', subType);
         } else {
           localStorage.removeItem('petSubType');
         }
-
-        localStorage.setItem('quizQuery', relaxedQuery || query);
+        localStorage.setItem('quizQuery', relaxedQuery || query); // Store the query that worked
         router.push('/results');
+        // setLoading(false) will be handled by finally, even after navigation starts
       } else {
-        alert('Sorry, no matching pets found. Try different preferences.');
+        alert('Sorry, no matching pets found, even with relaxed criteria. Try different preferences.');
+        // setLoading(false) will be handled by finally
       }
     } catch (err) {
-      alert('Something went wrong. Please try again later.');
+      alert('Something went wrong while fetching pets. Please try again later.');
+      // setLoading(false) will be handled by finally
+    } finally {
+      setLoading(false); // Ensure loading is always reset
     }
   };
-  
+
 
   const question = questions[currentQuestion];
 
   return (
-    <div className="flex justify-center gap-50">
-      <div className="w-1/2 flex justify-center items-center">
-        <Image src={question.image} alt="Pet" className="w-100 h-100 object-contain" />
-      </div>
+    <>
+      <LoadingBar isLoading={loading} message="Finding your perfect match..." />
+      <div className={`flex justify-center gap-50 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className="w-1/2 flex justify-center items-center">
+          <Image src={question.image} alt="Pet" className="w-100 h-100 object-contain" />
+        </div>
 
-      <div className="w-[800px] h-[500px] max-w-2xl bg-orange-100 p-10 rounded-xl shadow-md text-center">
-        <h2 className="text-2xl font-semibold mb-6 mt-3">{question.question}</h2>
-        <p className="text-lg text-gray-600 text-left mb-6">
-          Question {currentQuestion + 1} out of {questions.length}
-        </p>
-        <div className="flex flex-col gap-8 text-left">
-          {question.options.map((option, i) => {
-            const isMulti = question.multiple;
-            const currentValue = selectedAnswers[currentQuestion];
+        <div className="w-[800px] h-[500px] max-w-2xl bg-orange-100 p-10 rounded-xl shadow-md text-center">
+          <h2 className="text-2xl font-semibold mb-6 mt-3">{question.question}</h2>
+          <p className="text-lg text-gray-600 text-left mb-6">
+            Question {currentQuestion + 1} out of {questions.length}
+          </p>
+          <div className="flex flex-col gap-8 text-left">
+            {question.options.map((option, i) => {
+              const isMulti = question.multiple;
+              const currentValue = selectedAnswers[currentQuestion];
 
-            const isChecked = isMulti
-              ? Array.isArray(currentValue) && currentValue.includes(option.value)
-              : currentValue === option.value;
+              const isChecked = isMulti
+                ? Array.isArray(currentValue) && currentValue.includes(option.value)
+                : currentValue === option.value;
 
-            const handleChange = () => {
-              if (isMulti) {
-                const updated = Array.isArray(currentValue) ? [...currentValue] : [];
-                const index = updated.indexOf(option.value);
-                if (index === -1) {
-                  updated.push(option.value);
+              const handleChange = () => {
+                if (isMulti) {
+                  const updated = Array.isArray(currentValue) ? [...currentValue] : [];
+                  const index = updated.indexOf(option.value);
+                  if (index === -1) {
+                    updated.push(option.value);
+                  } else {
+                    updated.splice(index, 1);
+                  }
+                  handleAnswerChange(updated);
                 } else {
-                  updated.splice(index, 1);
+                  handleAnswerChange(option.value);
                 }
-                handleAnswerChange(updated);
-              } else {
-                handleAnswerChange(option.value);
-              }
-            };
+              };
 
-            return (
-              <label key={i} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type={isMulti ? 'checkbox' : 'radio'}
-                  name={`question-${currentQuestion}`}
-                  value={option.value}
-                  checked={isChecked}
-                  onChange={handleChange}
-                  className="hidden peer"
-                />
-                <div className="w-5 h-5 border-2 border-gray-500 rounded-md flex items-center justify-center peer-checked:bg-orange-500 peer-checked:border-orange-500">
-                  {isChecked && (
-                    <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <span className="text-md font-medium">{option.label}</span>
-              </label>
-            );
-          })}
-        </div>
+              return (
+                <label key={i} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type={isMulti ? 'checkbox' : 'radio'}
+                    name={`question-${currentQuestion}`}
+                    value={option.value}
+                    checked={isChecked}
+                    onChange={handleChange}
+                    className="hidden peer"
+                  />
+                  <div className="w-5 h-5 border-2 border-gray-500 rounded-md flex items-center justify-center peer-checked:bg-orange-500 peer-checked:border-orange-500">
+                    {isChecked && (
+                      <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+                    )}
+                  </div>
+                  <span className="text-md font-medium">{option.label}</span>
+                </label>
+              );
+            })}
+          </div>
 
 
-        <div className="flex justify-between mt-10">
-          <Button
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-3xl shadow-2xl text-md"
-            disabled={currentQuestion === 0}
-            onClick={handlePrevious}
-          >
-            Previous
-          </Button>
+          <div className="flex justify-between mt-10">
+            <Button
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-3xl shadow-2xl text-md"
+              disabled={currentQuestion === 0 || loading} // Disable when loading
+              onClick={handlePrevious}
+            >
+              Previous
+            </Button>
 
-          <Button
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-3xl shadow-2xl text-md"
-            disabled={!selectedAnswers[currentQuestion]}
-            onClick={handleNext}
-          >
-            {currentQuestion + 1 < questions.length ? 'Next' : 'See Results'}
-          </Button>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-3xl shadow-2xl text-md"
+              disabled={!selectedAnswers[currentQuestion] || loading} // Disable when loading
+              onClick={handleNext}
+            >
+              {currentQuestion + 1 < questions.length ? 'Next' : 'See Results'}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

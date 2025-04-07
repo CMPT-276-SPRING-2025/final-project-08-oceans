@@ -126,7 +126,7 @@ export default async function ShelterDetail({ params, searchParams }) {
   
       <hr className="border-t border-gray-300" />
   
-      {/* Interactive Map */}
+      {/* Static Map */}
       <div className="w-full h-96 rounded-lg overflow-hidden shadow">
         <ShelterDetailMapWrapper shelter={shelter} />
       </div>

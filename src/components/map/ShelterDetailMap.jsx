@@ -79,7 +79,6 @@ export default function ShelterDetailMap({ shelter }) {
         }
         
         setCoordinates(shelterCoordinates);
-
       } catch (err) {
         setError(err.message || 'Failed to determine location');
         setCoordinates(null);
