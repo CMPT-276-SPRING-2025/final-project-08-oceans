@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { mapboxCache } from '@/lib/mapboxCache';
 
 const MAPBOX_BASE_URL = 'https://api.mapbox.com';
 const GEOCODING_ENDPOINT = '/geocoding/v5/mapbox.places';
@@ -22,11 +23,6 @@ type NavigationRequest = {
   waypoints?: string[];
 };
 
-const cache = new Map<string, any>();
-
-// Export cache for testing purposes ONLY
-export const _test_clearMapboxCache = process.env.NODE_ENV === 'test' ? () => cache.clear() : undefined;
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action');
@@ -49,13 +45,13 @@ export async function GET(request: NextRequest) {
           );
         }
         
-        const cachedResult = cache.get(`geocode:${address}`);
+        const cachedResult = mapboxCache.get(`geocode:${address}`);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
         
         const result = await geocodeAddress(address);
-        cache.set(`geocode:${address}`, result);
+        mapboxCache.set(`geocode:${address}`, result);
         return NextResponse.json(result);
       }
       
@@ -74,13 +70,13 @@ export async function GET(request: NextRequest) {
         const waypointsParam = searchParams.get('waypoints');
         const waypoints = waypointsParam ? waypointsParam.split('|') : [];
         
-        const cachedResult = cache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
+        const cachedResult = mapboxCache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
         
         const result = await getDirections(origin, destination, mode, waypoints);
-        cache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
+        mapboxCache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
         return NextResponse.json(result);
       }
       case 'staticmap': {
@@ -113,7 +109,7 @@ export async function GET(request: NextRequest) {
         }
 
         const cacheKey = `staticmap:${lon}:${lat}:${zoom}:${width}:${height}:${markerSize}:${markerColor}`;
-        const cachedResult = cache.get(cacheKey);
+        const cachedResult = mapboxCache.get(cacheKey);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
@@ -123,7 +119,7 @@ export async function GET(request: NextRequest) {
         const url = `${MAPBOX_BASE_URL}${STATIC_IMAGE_ENDPOINT}/${markerOverlay}/${lon},${lat},${zoom}/${width}x${height}@2x?access_token=${process.env.MAPBOX_KEY}&attribution=false&logo=false`;
 
         const result = { staticMapURL: url };
-        cache.set(cacheKey, result);
+        mapboxCache.set(cacheKey, result);
         return NextResponse.json(result);
       }
 
@@ -167,13 +163,13 @@ export async function POST(request: NextRequest) {
         
         const results = await Promise.all(
           addresses.map(async (address) => {
-            const cachedResult = cache.get(`geocode:${address}`);
+            const cachedResult = mapboxCache.get(`geocode:${address}`);
             if (cachedResult) {
               return cachedResult;
             }
             
             const result = await geocodeAddress(address);
-            cache.set(`geocode:${address}`, result);
+            mapboxCache.set(`geocode:${address}`, result);
             return result;
           })
         );
@@ -191,13 +187,13 @@ export async function POST(request: NextRequest) {
           );
         }
         
-        const cachedResult = cache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
+        const cachedResult = mapboxCache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
         
         const result = await getDirections(origin, destination, mode, waypoints);
-        cache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
+        mapboxCache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
         return NextResponse.json(result);
       }
       
