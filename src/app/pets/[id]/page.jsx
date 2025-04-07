@@ -111,13 +111,14 @@ export default function PetDetailPage({ params, searchParams }) {
             {/* Pet photo */}
               {pet.photos && pet.photos.length > 0 ? (
                 <>
-                  <div className="relative h-full w-full overflow-hidden border border-gray-50">
+                  <div className="relative h-full w-full overflow-hidden border border-gray-50 rounded-2xl">
                     <Image 
                       src={pet.photos[currentImageIndex].large || pet.photos[currentImageIndex].medium} 
                       alt={pet.name || 'Pet image'}
                       fill
-                      className="object-cover rounded-2xl"
+                      className="object-cover"
                       priority
+                      sizes="(max-width: 767px) 100vw, 50vw"
                       onError={(e) => {
                         e.target.src = assets.icon_paw;
                         e.target.style.objectFit = 'contain';

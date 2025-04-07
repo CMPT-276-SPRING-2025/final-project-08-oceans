@@ -76,12 +76,13 @@ export default async function ShelterDetail({ params, searchParams }) {
           Back
         </Link>
         <div className="flex items-start gap-6 w-full md:w-2/3">
-          <div className="w-[180px] h-[180px] bg-white rounded-lg flex items-center justify-center overflow-hidden">
+          <div className="relative w-[180px] h-[180px] bg-white rounded-lg flex items-center justify-center overflow-hidden">
             <Image
               src={shelter.photos?.[0]?.medium || assets.icon_paw}
               alt="shelter logo" 
-              width={180}
-              height={150}
+              priority
+              fill
+              sizes='180px'
               className="object-cover"
             />
           </div>
