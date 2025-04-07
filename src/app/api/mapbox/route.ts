@@ -24,6 +24,9 @@ type NavigationRequest = {
 
 const cache = new Map<string, any>();
 
+// Export cache for testing purposes ONLY
+export const _test_clearMapboxCache = process.env.NODE_ENV === 'test' ? () => cache.clear() : undefined;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action');
