@@ -9,7 +9,7 @@ export async function GET(
     request: Request, { params }
 ) {
 
-    const { id } = params;
+    const { id } = await params;
 
     try {
 
