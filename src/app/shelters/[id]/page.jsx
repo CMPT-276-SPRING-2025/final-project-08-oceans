@@ -1,9 +1,9 @@
 import React from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { assets } from '@/assets/assets';
 import Link from 'next/link';
 import ShelterDetailMapWrapper from '@/components/map/ShelterDetailMapWrapper';
-import { Button } from '@/components/ui/button';
 
 
 async function getShelter(id) {

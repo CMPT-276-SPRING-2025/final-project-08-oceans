@@ -1,3 +1,4 @@
+"use client"
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import mapboxgl, { LngLatBounds } from 'mapbox-gl'; // Import LngLatBounds
 import 'mapbox-gl/dist/mapbox-gl.css';
