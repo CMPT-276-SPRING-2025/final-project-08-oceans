@@ -57,14 +57,13 @@ export default function PetDetailPage({ params, searchParams }) {
         const cachedPet = getFromSessionStorage(cacheKey);
         
         if (cachedPet) {
-          console.log(`Using cached data for pet ${id}`);
+
           setPet(cachedPet);
           setLoading(false);
           return;
         }
         
         // No cached data, fetch from API
-        console.log(`Fetching pet ${id} from API`);
         const response = await fetch(`/pets/api/${id}`);
         const data = await response.json();
         

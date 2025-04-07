@@ -32,7 +32,6 @@ export default function ShelterDetailMap({ shelter }) {
           throw new Error('Failed to get Mapbox API key');
         }
       } catch (err) {
-        console.error('Error getting Mapbox key:', err);
         setError(err.message || 'Failed to load map');
       }
     };
@@ -82,7 +81,6 @@ export default function ShelterDetailMap({ shelter }) {
         setCoordinates(shelterCoordinates);
 
       } catch (err) {
-        console.error('Error during Geocodingp:', err);
         setError(err.message || 'Failed to determine location');
         setCoordinates(null);
       } finally {
@@ -128,7 +126,6 @@ export default function ShelterDetailMap({ shelter }) {
         }
 
       } catch (err) {
-        console.error("Error fetching static map URL:", err);
         setError(err.message || 'Failed to load map image');
         setStaticMapUrl(null); 
       } finally {

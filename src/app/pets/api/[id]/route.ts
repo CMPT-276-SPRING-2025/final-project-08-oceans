@@ -16,7 +16,6 @@ export async function GET(
         const petData = await fetchPetDetails(id);
 
         if (!petData || !petData.animal) {
-            console.log(`Pet not found for ID: ${id}`);
             
             return NextResponse.json(
                 { message: `Pet with ID ${id} not found.` },
@@ -31,8 +30,6 @@ export async function GET(
         );
 
     } catch (error: unknown) {
-
-        console.error(`Error processing request for pet ID ${id}:`, error);
 
         const errorMessage = error instanceof Error ? error.message : 'An unknown server error occurred.';
 

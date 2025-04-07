@@ -59,35 +59,30 @@ const Shelters = () => {
         const cachedShelters = getFromSessionStorage(cacheKey);
         
         if (cachedShelters) {
-          console.log('Using cached shelter data');
+
           setShelters(cachedShelters);
           setLoading(false);
           return;
         }
         
-        console.log('Fetching shelter data from API');
+
         const response = await fetch('/api/shelters');
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Fetched shelters:', { 
-          shelterCount: data.shelters?.length || 0,
-          pagination: data.pagination,
-          firstShelter: data.shelters && data.shelters.length > 0 ? data.shelters[0] : 'No shelters found'
-        });
         
         if (data.shelters && Array.isArray(data.shelters)) {
           // Save to session storage (cache for 30 minutes)
           saveToSessionStorage(cacheKey, data.shelters, 30);
           setShelters(data.shelters);
         } else {
-          console.error('Invalid shelters data format:', data);
+
           setShelters([]);
         }
       } catch (err) {
-        console.error('Error fetching shelters:', err);
+
         setError(err.message);
         setShelters([]);
       } finally {
@@ -119,14 +114,14 @@ const Shelters = () => {
       const cachedResults = getFromSessionStorage(cacheKey);
       
       if (cachedResults) {
-        console.log(`Using cached shelter search results for: ${cacheKey}`);
+
         setShelters(cachedResults);
         setLoading(false);
         return;
       }
       
       const url = `/api/shelters${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      console.log(`Searching shelters with URL: ${url}`);
+
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -140,11 +135,11 @@ const Shelters = () => {
         saveToSessionStorage(cacheKey, data.shelters, 15);
         setShelters(data.shelters);
       } else {
-        console.error('Invalid shelters data format:', data);
+
         setShelters([]);
       }
     } catch (err) {
-      console.error('Error searching shelters:', err);
+
       setError(err.message);
       setShelters([]);
     } finally {
@@ -172,7 +167,6 @@ const Shelters = () => {
 
       
   const handleShelterSelect = useCallback((shelterId) => {
-    console.log(`Parent notified by popup button: Shelter ID: ${shelterId}. Scrolling.`);
     setSelectedShelterId(shelterId); // Update state if needed
 
     // --- Scroll Logic ---
@@ -188,7 +182,6 @@ const Shelters = () => {
             currentCard?.classList.remove('ring-2', 'ring-orange-500');
         }, 2000);
     } else {
-        console.warn(`Shelter card with ID ${shelterCardId} not found for scrolling.`);
     }
 
   }, []);

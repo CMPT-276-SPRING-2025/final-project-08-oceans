@@ -49,7 +49,6 @@ async function getShelter(id) {
       photos: organization.photos,
     };
   } catch (error) {
-    console.error('Error fetching shelter:', error);
     return null;
   }
 }

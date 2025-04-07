@@ -17,9 +17,8 @@ export function saveToSessionStorage<T>(key: string, data: T, expiryMinutes: num
     };
 
     sessionStorage.setItem(key, JSON.stringify(item));
-    console.log(`Data saved to sessionStorage with key: ${key}`);
+
   } catch (error) {
-    console.error('Error saving to sessionStorage:', error);
   }
 }
 
@@ -37,13 +36,13 @@ export function getFromSessionStorage<T>(key: string): T | null {
     // Check if the item has expired
     if (now.getTime() > item.expiry) {
       sessionStorage.removeItem(key);
-      console.log(`Expired data removed for key: ${key}`);
+
       return null;
     }
 
     return item.data;
   } catch (error) {
-    console.error('Error retrieving from sessionStorage:', error);
+
     return null;
   }
 }
@@ -54,9 +53,9 @@ export function removeFromSessionStorage(key: string): void {
     if (typeof window === 'undefined') return; // Don't run on server
 
     sessionStorage.removeItem(key);
-    console.log(`Data removed from sessionStorage with key: ${key}`);
+
   } catch (error) {
-    console.error('Error removing from sessionStorage:', error);
+
   }
 }
 
@@ -79,7 +78,7 @@ export function clearSessionStorage(prefix: string = 'petfinder_'): void {
     // If no prefix specified, clear everything
     if (!prefix) {
       sessionStorage.clear();
-      console.log('All sessionStorage data cleared');
+
       return;
     }
 
@@ -89,8 +88,8 @@ export function clearSessionStorage(prefix: string = 'petfinder_'): void {
         sessionStorage.removeItem(key);
       }
     });
-    console.log(`SessionStorage data with prefix "${prefix}" cleared`);
+
   } catch (error) {
-    console.error('Error clearing sessionStorage:', error);
+
   }
 }

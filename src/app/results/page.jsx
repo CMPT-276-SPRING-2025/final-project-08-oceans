@@ -26,7 +26,6 @@ const ResultsPage = () => {
         const petsWithPhotos = allPets.filter(pet => pet.photos && pet.photos.length > 0);
         setPets(petsWithPhotos);
       } catch (err) {
-        console.error('Failed to parse stored pets:', err);
         setPets([]);
       }
     }
@@ -78,7 +77,6 @@ const ResultsPage = () => {
         setFallbackMessage('No pets found for this location. Try a different location.');
       }
     } catch (err) {
-      console.error('Error fetching pets by location:', err);
       setFallbackMessage('Something went wrong. Please try again later.');
     }
   };

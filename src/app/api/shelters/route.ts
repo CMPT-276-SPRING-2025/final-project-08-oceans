@@ -131,7 +131,6 @@ export async function GET(request: Request) {
     try {
       token = await getPetfinderToken();
     } catch (tokenError) {
-      console.error('Error getting Petfinder token:', tokenError);
       // Return sample data if token fetch fails
       return NextResponse.json({ 
         shelters: getSampleShelters(),
@@ -173,7 +172,6 @@ export async function GET(request: Request) {
         queryParams.append('sort', 'distance');
       }
 
-      console.log(`Fetching organizations with params: ${queryParams.toString()}`);
       
       const response = await fetch(`https://api.petfinder.com/v2/organizations?${queryParams.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -181,9 +179,7 @@ export async function GET(request: Request) {
       });
 
       if (!response.ok) {
-        console.error(`API error: ${response.status} - ${response.statusText}`);
         if (response.status === 400 || (!location && !name)) {
-          console.log('Returning sample shelter data due to API error or missing search parameters');
           return NextResponse.json({ 
             shelters: getSampleShelters(),
             pagination: {
@@ -198,16 +194,6 @@ export async function GET(request: Request) {
       }
 
       const data: PetfinderOrganizationResponse = await response.json();
-      
-      // Log the raw API response
-      console.log('Total organizations fetched:', data.organizations.length);
-      if (data.organizations.length > 0) {
-        console.log('Sample organization:', JSON.stringify({
-          id: data.organizations[0].id,
-          name: data.organizations[0].name,
-          address: data.organizations[0].address
-        }, null, 2));
-      }
 
       // Simplify organization data before sending response
       const simplifiedShelters: SimplifiedShelter[] = data.organizations.map((org) => {
@@ -242,7 +228,6 @@ export async function GET(request: Request) {
         pagination: data.pagination
       });
     } catch (error) {
-      console.error('Error fetching organizations:', error);
       // Return sample data if API fetch fails
       return NextResponse.json({ 
         shelters: getSampleShelters(),
@@ -256,7 +241,6 @@ export async function GET(request: Request) {
     }
 
   } catch (error) {
-    console.error('Error in shelters route:', error);
     // Return sample data for any other errors
     return NextResponse.json({ 
       shelters: getSampleShelters(),

@@ -331,7 +331,6 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         alert('Sorry, no matching pets found. Try different preferences.');
       }
     } catch (err) {
-      console.error('Error fetching pets:', err);
       alert('Something went wrong. Please try again later.');
     }
   };

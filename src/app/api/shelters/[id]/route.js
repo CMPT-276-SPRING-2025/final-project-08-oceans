@@ -67,7 +67,6 @@ export async function GET(request, { params }) {
 
     return NextResponse.json({ shelter });
   } catch (error) {
-    console.error('Error fetching shelter:', error);
     return NextResponse.json({ error: 'Failed to fetch shelter data' }, { status: 500 });
   }
 }

@@ -89,7 +89,6 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
           }
         }
       } catch (err: any) {
-        console.error('Error initializing map:', err);
         setError(err.message || 'Failed to initialize map');
       } finally {
         setLoading(false);
@@ -222,7 +221,6 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
         debouncedFitMapToBounds(validShelters);
 
       } catch (err: any) {
-        console.error('Error updating markers:', err);
         setError(err.message || 'Failed to update markers');
       }
     };
@@ -247,7 +245,6 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
 
       if (button && button.hasAttribute('data-shelter-id')) {
         const shelterId = button.getAttribute('data-shelter-id');
-        console.log('Popup button clicked for shelter ID:', shelterId);
         if (shelterId) {
           onShelterSelect(shelterId);
 
@@ -261,11 +258,11 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
 
     // Add the delegated event listener to the map container
     mapContainerElement.addEventListener('click', handlePopupClick);
-    console.log('Added delegated click listener to map container.');
+
 
     return () => {
       mapContainerElement.removeEventListener('click', handlePopupClick);
-      console.log('Removed delegated click listener.');
+
     };
   }, [onShelterSelect, isMapLoaded]);
 
