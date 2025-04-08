@@ -5,13 +5,13 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { LocationSearchInput } from '@/components/ui/locationSeachInput';
-import { LoadingBar } from '@/components/ui/loading-bar'; // Import LoadingBar
+import { LoadingBar } from '@/components/ui/loading-bar'; 
 const ResultsPage = () => {
   const [pets, setPets] = useState([]);
   const [fallbackMessage, setFallbackMessage] = useState('');
   const [pageTitle, setPageTitle] = useState('Your Perfect Pet Awaits! 🐾');
-  const [location, setLocation] = useState(''); // New state for location filter
-  const [loading, setLoading] = useState(true); // Initialize loading state to true
+  const [location, setLocation] = useState(''); 
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   // Initial loading from localStorage (pets, petType, petSubType, etc.)
@@ -21,6 +21,7 @@ const ResultsPage = () => {
     const petType = localStorage.getItem('petType');
     const petSubType = localStorage.getItem('petSubType');
 
+    // If pet is stored in local storage, set pets
     if (storedPets) {
       try {
         const allPets = JSON.parse(storedPets);
@@ -49,10 +50,9 @@ const ResultsPage = () => {
     } else if (petType === 'bird') {
       setPageTitle('Birds Available for Adoption🐣');
     }
-    setLoading(false); // Set loading to false after initial load
+    setLoading(false);
   }, []);
 
-  // New function to search pets by location and quiz filters
   const handleLocationSearch = async () => {
     const petType = localStorage.getItem('petType');
     const petSubType = localStorage.getItem('petSubType');
@@ -64,26 +64,33 @@ const ResultsPage = () => {
     if (petSubType) {
       url += `&subType=${petSubType}`;
     }
+    // Append location parameter to URL if location is provided
     if (location) {
       url += `&location=${encodeURIComponent(location)}`;
     }
 
-    setLoading(true); // Set loading to true before fetching
+    setLoading(true);
     try {
+      // Fetch pets data from the API using constructed URL
       const res = await fetch(url);
       const data = await res.json();
+
+      // If pets are found, filter out pets without photos and update state
       if (data?.pets?.length) {
         const petsWithPhotos = data.pets.filter(pet => pet.photos && pet.photos.length > 0);
         setPets(petsWithPhotos);
         setFallbackMessage('');
       } else {
+        // If no pets are found, clear pets array and set fallback message
         setPets([]);
         setFallbackMessage('No pets found for this location. Try a different location.');
       }
     } catch (err) {
+      // Handle API errors with user-friendly message
       setFallbackMessage('Something went wrong. Please try again later.');
     } finally {
-      setLoading(false); // Set loading to false after fetch completes
+      // Reset loading state regardless of success/failure
+      setLoading(false);
     }
   };
 
@@ -152,8 +159,7 @@ const ResultsPage = () => {
                 <Button
                   className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-6 text-md"
                   onClick={() => {
-                    setLoading(true); // Set loading to true
-                    // Optional: store filters if you want them available on details page
+                    setLoading(true); 
                     localStorage.setItem('petFilters', JSON.stringify({
                       type: localStorage.getItem('petType') || '',
                       subType: localStorage.getItem('petSubType') || ''

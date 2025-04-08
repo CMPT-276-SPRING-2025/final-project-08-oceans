@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { LoadingBar } from '@/components/ui/loading-bar'; // Import LoadingBar
+import { LoadingBar } from '@/components/ui/loading-bar';
 import energyDogBreeds from '@/app/pets/Quiz_Breed_questions/Energy Dog breeds.json';
 import hypoallergenicDogBreeds from '@/app/pets/Quiz_Breed_questions/Hypoellergenic-Dog-breeds.json';
 import energyCatBreeds from '@/app/pets/Quiz_Breed_questions/Energy-Cat-breeds.json';
@@ -14,13 +14,15 @@ import careLevelMappings from '@/app/pets/Quiz_Breed_questions/care-Level-Generi
 import interactionMappings from '@/app/pets/Quiz_Breed_questions/Interaction-Level-Generic.json';
 import hypoallergenicCatBreeds from '@/app/pets/Quiz_Breed_questions/Hypoallergenic-Cat-breeds.json';
 
+
 const QuizComponent = ({ questions, type, isLetUsDecide }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState(Array(questions.length).fill(null));
   const router = useRouter();
   const [typeScores, setTypeScores] = useState({});
-  const [loading, setLoading] = useState(false); // Add loading state
+  const [loading, setLoading] = useState(false);
 
+  // If the current question is answered, it moves to the next question or fetches recommended pets if it's the last question
   const handleNext = () => {
     if (selectedAnswers[currentQuestion] !== null) {
       if (currentQuestion + 1 < questions.length) {
@@ -31,12 +33,14 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     }
   };
 
+  // Moves to the previous question if the current question is greater than 0
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
     }
   };
 
+  // Updates the selected answer for the current question and updates type scores if isLetUsDecide is true
   const handleAnswerChange = (answer) => {
     const updated = [...selectedAnswers];
     updated[currentQuestion] = answer;
@@ -59,7 +63,6 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     let dogBreedSet = new Set();
     let dogCoatSet = new Set();
 
-     // temp sets to collect breed-related answers separately
     let catEnergySet = new Set();
     let catAffectionSet = new Set();
     let catCoatSet = new Set();
@@ -67,6 +70,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     let careSet = new Set();
     let interactionSet = new Set();
 
+    //If the question is a standard field, it handles the query accordingly
     const handleStandardField = (q, key, answer) => {
       if (q.multiple) {
          if (!query[key]) query[key] = [];
@@ -82,7 +86,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       const answer = selectedAnswers[index];
       if (!key || !answer) return;
 
-      // DOGS
+      //Quiz feature to filter down from type dog
       if (type === 'dog') {
         if (key === 'breed') {
           if (answer === 'low-energy') energyDogBreeds.low_energy?.forEach(b => dogBreedSet.add(b));
@@ -91,16 +95,15 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         } else if (key === 'coat' && answer === 'hypoallergenic') {
           hypoallergenicDogBreeds.hypoallergenic_breeds_akc_in_api?.forEach(b => dogCoatSet.add(b));
         } else if (key === 'tags') {
-          const tagValues = Array.isArray(answer) ? answer : [answer]; // Ensure array
-
-          if (tagValues.includes("no_pets")){} // Add nothing
+          const tagValues = Array.isArray(answer) ? answer : [answer]; 
+          
+          // Processes each tag and checks if each one is good with certain categories
           tagValues.forEach(tagValue => {
-              // Check if it's one of the specific Petfinder boolean flags
               if (['good_with_children', 'good_with_dogs', 'good_with_cats'].includes(tagValue)) {
-                  // Use the tag value itself as the query key, set value to true
-                  query[tagValue] = true; // Petfinder uses boolean flags
+                  query[tagValue] = true;
               }
           });
+          //Else, it handles the standard field
         }else {
           handleStandardField(q, key, answer);
         }
@@ -119,14 +122,12 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         } else if (key === 'coat' && answer === 'hypoallergenic') {
           hypoallergenicCatBreeds.hypoallergenic_breeds?.forEach(b => catCoatSet.add(b));
         } else if (key === 'tags') {
-          const tagValues = Array.isArray(answer) ? answer : [answer]; // Ensure array
+          const tagValues = Array.isArray(answer) ? answer : [answer]; 
 
-          if (tagValues.includes("no_pets")){} // Add nothing
+          // Processes each tag and checks if each one is good with certain categories
           tagValues.forEach(tagValue => {
-              // Check if it's one of the specific Petfinder boolean flags
               if (['good_with_children', 'good_with_dogs', 'good_with_cats'].includes(tagValue)) {
-                  // Use the tag value itself as the query key, set value to true
-                  query[tagValue] = true; // Petfinder uses boolean flags
+                  query[tagValue] = true;
               }
           });
         }else {
@@ -146,14 +147,13 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
           const careOptions = careLevelMappings.care_level?.[category];
           const interactionOptions = interactionMappings.interaction_level?.[category];
 
-          // Match answer with care levels
+          // If the answer is a specific breed, add it to the set
           if (careOptions) {
             Object.values(careOptions).forEach(list => {
               list?.forEach(b => careSet.add(b));
             });
           }
 
-          // Match answer with interaction levels
           if (interactionOptions) {
             Object.values(interactionOptions).forEach(list => {
               list?.forEach(b => interactionSet.add(b));
@@ -165,9 +165,9 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       }
     });
 
+    // If the type is dog, it checks if the breed set is empty and adds the dog breeds to the set
     if (type === 'dog') {
       if (dogCoatSet.size > 0) {
-        // Find the intersection of dogBreedSet and dogCoatSet
         for (const breed of dogBreedSet) {
           if (dogCoatSet.has(breed)) {
             breedSet.add(breed);
@@ -180,7 +180,6 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     }
     else if (type === 'cat') {
       if (catCoatSet.size > 0) {
-        // Find the intersection of catEnergySet, catAffectionSet, and catCoatSet
         for (const breed of catEnergySet) {
           if (catAffectionSet.has(breed) && catCoatSet.has(breed)) {
             breedSet.add(breed);
@@ -195,7 +194,6 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         }
       }
     } else if (['bird', 'fish', 'reptile', 'small-pets'].includes(type)) {
-      // Find the intersection of careSet and interactionSet
       for (const breed of careSet) {
         if (interactionSet.has(breed)) {
           breedSet.add(breed);
@@ -203,7 +201,6 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       }
     }
 
-    // Add the breed sets to the query
     if (breedSet.size > 0) {
       query['breed'] = Array.from(breedSet).join(',');
     }
@@ -225,30 +222,34 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
 
       const skipKeys = ['size', 'breed', 'affectionate'];
 
+      // If the type is dog, it skips the 'age' key
       if (['bird', 'fish', 'reptile', 'small-pets'].includes(type)) {
         skipKeys.push('age');
       }
 
       if (skipKeys.includes(key)) return;
+
       if (key === 'coat' && answer === 'hypoallergenic'){
         if (type === 'dog') {
+          // If the type is dog, it adds the hypoallergenic breeds to the set
           hypoallergenicDogBreeds.hypoallergenic_breeds_akc_in_api?.forEach(b => breedSet.add(b));
         } else if (type === 'cat') {
+          // If the type is cat, it adds the hypoallergenic breeds to the set
           hypoallergenicCatBreeds.hypoallergenic_breeds?.forEach(b => breedSet.add(b));
         }
       }
-      if (key === 'tags') {
-        const tagValues = Array.isArray(answer) ? answer : [answer]; // Ensure array
 
-        if (tagValues.includes("no_pets")){} // Add nothing
+      if (key === 'tags') {
+        const tagValues = Array.isArray(answer) ? answer : [answer]; 
+
         tagValues.forEach(tagValue => {
-            // Check if it's one of the specific Petfinder boolean flags
             if (['good_with_children', 'good_with_dogs', 'good_with_cats'].includes(tagValue)) {
-                // Use the tag value itself as the query key, set value to true
-                query[tagValue] = true; // Petfinder uses boolean flags
+                query[tagValue] = true; 
             }
         });
       }
+
+      //If there are multiple answers, it handles the query accordingly
       else if (q.multiple) {
         if (!query[key]) query[key] = [];
         if (Array.isArray(answer)) {
@@ -270,11 +271,12 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
   const fetchRecommendedPets = async () => {
     let chosenType = type;
 
+    // If isLetUsDecide is true, it determines the type based on the highest score
     if (isLetUsDecide) {
       const topType = Object.entries(typeScores).sort((a, b) => b[1] - a[1])[0]?.[0];
       if (!topType) {
         alert('Please answer all questions!');
-        setLoading(false); // Reset loading if validation fails
+        setLoading(false); 
         return;
       }
       chosenType = topType;
@@ -296,29 +298,35 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     const { type: actualType, subType } = actualTypeInfo;
 
     let allPets = [];
-    setLoading(true); // Set loading to true
+    setLoading(true);
 
     try {
       const res = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${query}`);
       const data = await res.json();
+
+      // Check if the response contains pets
       if (data?.pets?.length) {
         allPets = data.pets;
       }
 
+      // If no length is found, it builds a relaxed query and fetches again
       if (!allPets.length) {
         relaxedQuery = buildRelaxedQuery();
         const relaxedRes = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${relaxedQuery}`);
         const relaxedData = await relaxedRes.json();
+
+        // Check if the relaxed response contains pets
         if (relaxedData?.pets?.length) {
           allPets = relaxedData.pets;
           localStorage.setItem('fallbackMessage', 'We couldn\'t find an exact match, but here are some similar pets!');
         } else {
-          localStorage.removeItem('fallbackMessage'); // Clear any previous fallback message
+          localStorage.removeItem('fallbackMessage');
         }
       } else {
-         localStorage.removeItem('fallbackMessage'); // Clear fallback if strict query worked
+         localStorage.removeItem('fallbackMessage');
       }
 
+      // If pets are found, it filters out duplicates and stores them in localStorage
       if (allPets.length) {
         const uniquePets = Array.from(new Map(allPets.map(p => [p.id, p])).values());
 
@@ -329,18 +337,15 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         } else {
           localStorage.removeItem('petSubType');
         }
-        localStorage.setItem('quizQuery', relaxedQuery || query); // Store the query that worked
+        localStorage.setItem('quizQuery', relaxedQuery || query); 
         router.push('/results');
-        // setLoading(false) will be handled by finally, even after navigation starts
       } else {
         alert('Sorry, no matching pets found, even with relaxed criteria. Try different preferences.');
-        // setLoading(false) will be handled by finally
       }
     } catch (err) {
       alert('Something went wrong while fetching pets. Please try again later.');
-      // setLoading(false) will be handled by finally
     } finally {
-      setLoading(false); // Ensure loading is always reset
+      setLoading(false); 
     }
   };
 
@@ -370,9 +375,13 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
                 : currentValue === option.value;
 
               const handleChange = () => {
+
+                // If the question is multiple choice, it updates the selected answers accordingly
                 if (isMulti) {
                   const updated = Array.isArray(currentValue) ? [...currentValue] : [];
                   const index = updated.indexOf(option.value);
+
+                  // If the option is already selected, it removes it from the array
                   if (index === -1) {
                     updated.push(option.value);
                   } else {

@@ -10,9 +10,11 @@ import * as NextResponseModule from 'next/server';
 global.fetch = jest.fn();
 
 const mockFetch = (response: any, ok = true, status = 200) => {
+  const responseBody = JSON.stringify(response); // Stringify for text()
   return jest.fn().mockResolvedValueOnce({
     ok,
     json: jest.fn().mockResolvedValueOnce(response),
+    text: jest.fn().mockResolvedValueOnce(responseBody), // Mock text()
     statusText: ok ? 'OK' : `Error ${status}`,
     status: ok ? status : status,
   });
@@ -110,7 +112,8 @@ describe('Mapbox API Route', () => {
 
         expect(global.fetch).toHaveBeenCalledTimes(1);
         expect(jsonSpy).toHaveBeenCalledWith(
-          { error: 'Error processing mapbox request' },
+          // Expect the specific error message based on mockFetch statusText
+          { error: 'Geocoding error: Error 500' },
           { status: 500 }
         );
         expect(response.status).toBe(500);
@@ -138,7 +141,7 @@ describe('Mapbox API Route', () => {
         expect(global.fetch).toHaveBeenCalledTimes(3);
         expect(global.fetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/geocoding/v5/mapbox.places/Origin.json'));
         expect(global.fetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/geocoding/v5/mapbox.places/Destination.json'));
-        expect(global.fetch).toHaveBeenNthCalledWith(3, expect.stringContaining('/directions/v5/mapbox/mapbox/driving/-74,40;-75,41?')); // Corrected path
+        expect(global.fetch).toHaveBeenNthCalledWith(3, expect.stringContaining('/directions/v5/mapbox/driving/-74,40;-75,41?')); // Removed extra /mapbox
 
         expect(jsonSpy).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -157,7 +160,8 @@ describe('Mapbox API Route', () => {
         const response = await GET(request);
 
         expect(jsonSpy).toHaveBeenCalledWith(
-          { error: 'Origin and destination parameters are required' },
+          // Match the actual error message from the route
+          { error: 'Origin address and either destination address or destination coordinates are required' },
           { status: 400 }
         );
         expect(response.status).toBe(400);
@@ -173,7 +177,8 @@ describe('Mapbox API Route', () => {
 
         expect(global.fetch).toHaveBeenCalledTimes(1); // Only geocode origin called
         expect(jsonSpy).toHaveBeenCalledWith(
-          { error: 'Error processing mapbox request' },
+          // Expect the specific error message based on mockFetch statusText
+          { error: 'Geocoding error: Error 500' },
           { status: 500 }
         );
         expect(response.status).toBe(500);
@@ -274,10 +279,10 @@ describe('Mapbox API Route', () => {
         expect(response.status).toBe(400);
       });
 
-      it('should return 500 if any Mapbox geocoding fails', async () => {
+      it('should return 200 with error details if any Mapbox geocoding fails', async () => {
         (global.fetch as jest.Mock)
-          .mockImplementationOnce(mockFetch(mockGeocodeResponse1))
-          .mockImplementationOnce(mockFetch({}, false, 500)); // Fail second geocode
+          .mockImplementationOnce(mockFetch(mockGeocodeResponse1)) // Success for Addr 1
+          .mockImplementationOnce(mockFetch({}, false, 500)); // Fail for Error Addr
 
         const request = { // Simulate NextRequest
           url: 'http://localhost/api/mapbox',
@@ -287,12 +292,22 @@ describe('Mapbox API Route', () => {
         const jsonSpy = jest.spyOn(NextResponseModule.NextResponse, 'json');
         const response = await POST(request);
 
-        expect(global.fetch).toHaveBeenCalledTimes(2); // Reverted: Both fetches likely initiated
-        expect(jsonSpy).toHaveBeenCalledWith(
-          { error: 'Error processing mapbox request' },
-          { status: 500 }
-        );
-        expect(response.status).toBe(500);
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+        // Expect a 200 OK because Promise.allSettled handles individual errors
+        expect(response.status).toBe(200);
+        expect(jsonSpy).toHaveBeenCalledWith({
+          results: [
+            // First result should be successful
+            expect.objectContaining({ query: 'Addr 1', features: expect.any(Array) }),
+            // Second result should contain the error details.
+            // The error thrown by geocodeAddress should be caught by allSettled.
+            expect.objectContaining({
+              query: 'Error Addr',
+              features: [],
+              error: 'Geocoding error: Error 500' // Expect specific error from geocodeAddress via reason.message
+            }),
+          ],
+        });
       });
     });
 
@@ -354,7 +369,8 @@ describe('Mapbox API Route', () => {
 
         expect(global.fetch).toHaveBeenCalledTimes(1);
         expect(jsonSpy).toHaveBeenCalledWith(
-          { error: 'Error processing mapbox request' },
+          // Expect the specific error message based on mockFetch statusText
+          { error: 'Geocoding error: Error 500' },
           { status: 500 }
         );
         expect(response.status).toBe(500);

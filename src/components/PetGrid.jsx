@@ -3,6 +3,8 @@
 import React from 'react';
 
 const PetGrid = ({ pets, goToDetailPage}) => {
+
+  // Check if pets is null or undefined, or if it's not an array or is empty
   if (!pets || !Array.isArray(pets) || pets.length === 0) {
     return <div className="text-center py-10">No pets found.</div>;
   }
@@ -14,14 +16,12 @@ const PetGrid = ({ pets, goToDetailPage}) => {
           return null;
         }
 
-        // Only use images from the API, no fallbacks
         const hasPhoto = pet.photos && 
                         Array.isArray(pet.photos) && 
                         pet.photos.length > 0 && 
                         pet.photos[0] && 
                         pet.photos[0].medium;
         
-        // Skip pets without photos
         if (!hasPhoto) {
           return null;
         }

@@ -38,9 +38,11 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
 
-  // Debounce function (utility)
+  // Debounce function
   const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    // This function returns a debounced version of the original function
     return (...args: Parameters<F>): void => {
       if (timeoutId !== null) {
         clearTimeout(timeoutId);
@@ -49,9 +51,10 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
     };
   };
 
-  // Debounced version of fitBounds/flyTo for smoother adjustments
   const debouncedFitMapToBounds = useCallback(debounce((validShelters: Shelter[]) => {
     if (!map.current) return;
+
+    // Clear existing markers
     if (validShelters.length > 1) {
         const bounds = new mapboxgl.LngLatBounds();
         validShelters.forEach(shelter => {
@@ -60,20 +63,22 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
             }
         });
         map.current.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 500 });
+
+    // Otherwise, zooms into location
     } else if (validShelters.length === 1) {
         map.current.flyTo({ center: validShelters[0].coordinates, zoom: 12, duration: 500 });
     }
-  }, 300), []); // Recreate if map instance changes (shouldn't often)
+  }, 300), []);
   
 
-  // Fetch Mapbox API key
   useEffect(() => {
     const initializeMap = async () => {
       try {
         setLoading(true);
         
-        // Check if we have the Mapbox key in session storage
         const cachedKey = getFromSessionStorage<string>('mapbox_api_key');
+
+        // Check if the Mapbox key is already cached in sessionStorage
         if (cachedKey) {
           setMapboxKey(cachedKey);
         } else {
@@ -81,6 +86,7 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
           const response = await fetch('/api/mapbox');
           const data = await response.json();
           
+          // Check if the response contains a valid Mapbox key
           if (data.mapboxKey) {
             setMapboxKey(data.mapboxKey);
             saveToSessionStorage('mapbox_api_key', data.mapboxKey, 60); // Cache for 60 minutes
@@ -98,17 +104,18 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
     initializeMap();
   }, []);
 
-  // Initialize the map only once when mapboxKey is available
   useEffect(() => {
     if (!mapboxKey || !mapContainer.current) return;
 
     mapboxgl.accessToken = mapboxKey;
 
+    // Check if the map is already loaded
     if (map.current && map.current.isStyleLoaded()) {
       setIsMapLoaded(true);
       return;
     }
 
+    // Initialize the map only if it hasn't been initialized yet
     if (!map.current) {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -125,6 +132,8 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
     }
 
     return () => {
+
+      // Cleanup the map instance when the component unmounts
       if (map.current && typeof map.current.remove === 'function') {
         map.current.remove();
       }
@@ -133,10 +142,10 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
     };
   }, [mapboxKey]);
 
-  // Update markers when shelters change
   useEffect(() => {
     if (!map.current || !isMapLoaded || !mapboxKey || !shelters.length){
 
+      // If there are no shelters, remove existing markers and return
       if (markersRef.current.length > 0) {
         markersRef.current.forEach(marker => marker.remove());
         markersRef.current = [];
@@ -146,7 +155,6 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
 
     const updateMarkers = async () => {
       try {
-        // Geocode shelters
         const addresses = shelters.map(shelter => shelter.location);
 
         const response = await fetch('/api/mapbox', {
@@ -162,6 +170,7 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
 
         const data = await response.json();
 
+        // Check if the response contains valid geocode results
         if (!data.results) {
           throw new Error('Failed to geocode shelter addresses');
         }
@@ -187,7 +196,6 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
         validShelters.forEach(shelter => {
           if (!shelter.coordinates) return;
 
-          // Create custom marker element
           const el = document.createElement('div');
           el.className = 'shelter-marker';
           el.style.width = '25px';
@@ -197,7 +205,6 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
           el.style.cursor = 'pointer';
           el.setAttribute('aria-label', `Shelter: ${shelter.name}`);
 
-          // Create popup with shelter info
           const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
             <div style="max-width: 220px; font-family: sans-serif;">
               <h3 style="margin: 0 0 5px; font-size: 15px; color: #333;">${shelter.name}</h3>
@@ -208,13 +215,11 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
             </div>
           `);
 
-          // Create and add the marker
           const marker = new mapboxgl.Marker(el)
             .setLngLat(shelter.coordinates)
             .setPopup(popup)
             .addTo(map.current!);
 
-          // Store marker reference for cleanup
           markersRef.current.push(marker);
         });
 
@@ -243,12 +248,15 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
     const handlePopupClick = (e: MouseEvent) => {
       const button = (e.target as HTMLElement).closest('.popup-details-button');
 
+      // Check if the clicked element is a button inside a popup
       if (button && button.hasAttribute('data-shelter-id')) {
         const shelterId = button.getAttribute('data-shelter-id');
         if (shelterId) {
           onShelterSelect(shelterId);
 
            const openPopup = mapContainerElement.querySelector('.mapboxgl-popup');
+
+           //Closes popup if it is open
            if (openPopup) {
                openPopup.remove();
            }
@@ -256,7 +264,6 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
       }
     };
 
-    // Add the delegated event listener to the map container
     mapContainerElement.addEventListener('click', handlePopupClick);
 
 

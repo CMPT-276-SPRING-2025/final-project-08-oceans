@@ -20,7 +20,7 @@ export default function PetDetailPage({ params, searchParams }) {
   const searchParamsValue = use(searchParams);
 
   const nextImage = () => {
-    if (pet?.photos?.length > 1) {  // Changed from just length check to length > 1
+    if (pet?.photos?.length > 1) {  
       setCurrentImageIndex((prevIndex) => 
         prevIndex === pet.photos.length - 1 ? 0 : prevIndex + 1
       );
@@ -28,7 +28,7 @@ export default function PetDetailPage({ params, searchParams }) {
   };
   
   const prevImage = () => {
-    if (pet?.photos?.length > 1) {  // Changed from just length check to length > 1
+    if (pet?.photos?.length > 1) { 
       setCurrentImageIndex((prevIndex) => 
         prevIndex === 0 ? pet.photos.length - 1 : prevIndex - 1
       );

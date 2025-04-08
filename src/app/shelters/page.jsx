@@ -24,8 +24,9 @@ const Shelters = () => {
 
   useEffect(() => {
     let timer;
+
+    // Start the loading animation
     if (loading) {
-      // Update progress over time
       setLoadingProgress(10);
       setTimeout(() => setLoadingProgress(30), 100);
       setTimeout(() => setLoadingProgress(50), 400);
@@ -58,8 +59,8 @@ const Shelters = () => {
         // Check if we have cached shelter data
         const cachedShelters = getFromSessionStorage(cacheKey);
         
+        // If cached data exists, use it
         if (cachedShelters) {
-
           setShelters(cachedShelters);
           setLoading(false);
           return;
@@ -114,7 +115,6 @@ const Shelters = () => {
       const cachedResults = getFromSessionStorage(cacheKey);
       
       if (cachedResults) {
-
         setShelters(cachedResults);
         setLoading(false);
         return;
@@ -167,21 +167,18 @@ const Shelters = () => {
 
       
   const handleShelterSelect = useCallback((shelterId) => {
-    setSelectedShelterId(shelterId); // Update state if needed
+    setSelectedShelterId(shelterId); 
 
-    // --- Scroll Logic ---
     const shelterCardId = `shelter-${shelterId}`;
     const shelterCard = document.getElementById(shelterCardId);
     if (shelterCard) {
         shelterCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Optional: Highlighting triggered by parent state change (or keep highlight here)
         shelterCard.classList.add('ring-2', 'ring-orange-500', 'transition-shadow', 'duration-1500');
         setTimeout(() => {
             const currentCard = document.getElementById(shelterCardId);
             currentCard?.classList.remove('ring-2', 'ring-orange-500');
         }, 2000);
-    } else {
     }
 
   }, []);

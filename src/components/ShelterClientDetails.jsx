@@ -7,12 +7,12 @@ import { assets } from '@/assets/assets';
 import DirectionsMap from '@/components/map/DirectionMap';
 import ShelterDetailMapWrapper from '@/components/map/ShelterDetailMapWrapper'; // Keep static map wrapper
 
-// This component handles the client-side interactions for the shelter details page
+//ShelterClientDetails: Takes in the shelter and associated URL, formats the page for the associated shelter and returns the page
 export default function ShelterClientDetails({ shelter, backUrl }) {
   const [showDirections, setShowDirections] = useState(false);
 
+  // Check if shelter is null or undefined
   if (!shelter) {
-    // Handle case where shelter data might not be loaded yet, though it should be passed from Server Component
     return <div className="p-20 text-center">Loading shelter details...</div>;
   }
 
@@ -73,7 +73,6 @@ export default function ShelterClientDetails({ shelter, backUrl }) {
             <Image src={assets.phone} alt="phone" width={30} />
             <a href={`tel:${shelter.contact}`} className="text-lg text-orange-500">{shelter.contact || 'N/A'}</a>
           </div>
-          {/* Add Get Directions Button */}
           <button
             onClick={() => setShowDirections(true)}
             className="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline text-center"
@@ -90,11 +89,9 @@ export default function ShelterClientDetails({ shelter, backUrl }) {
         <ShelterDetailMapWrapper shelter={shelter} />
       </div>
 
-      {/* Directions Popup/Modal - Modified for full screen */}
       {showDirections && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center"> {/* Removed p-4 */}
-          {/* Inner container now takes full width and height */}
-          <div className="bg-white w-full h-full relative"> {/* Removed max-w-4xl, h-[70vh], rounded-lg, shadow-xl; Added h-full */}
+          <div className="bg-white w-full h-full relative">
              <DirectionsMap
                destinationAddress={shelter.location}
                destinationName={shelter.name}

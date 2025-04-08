@@ -1,11 +1,9 @@
-// Removed "use client"
-import React from 'react'; // Removed useState import
+import React from 'react'; 
 import Image from 'next/image';
 import { assets } from '@/assets/assets';
 import Link from 'next/link';
 import ShelterDetailMapWrapper from '@/components/map/ShelterDetailMapWrapper';
-// Removed DirectionsMap import
-import ShelterClientDetails from '@/components/ShelterClientDetails'; // Import the new client component
+import ShelterClientDetails from '@/components/ShelterClientDetails'; 
 
 
 async function getShelter(id) {
@@ -20,6 +18,8 @@ async function getShelter(id) {
       }),
     });
 
+
+    // Check if the token request was successful
     if (!tokenRes.ok) throw new Error('Failed to get Petfinder token');
     const { access_token } = await tokenRes.json();
 
@@ -55,16 +55,15 @@ async function getShelter(id) {
   }
 }
 
-// Reverted to async function for server-side data fetching
 export default async function ShelterDetail({ params, searchParams }) {
   // Extract the ID value before passing to client components
-  const { id } = await params; // Use params directly
+  const { id } = await params; 
   const shelterId = id;
 
-  const shelter = await getShelter(shelterId); // Fetch data on the server
+  // Check if shelter is valid by ID, fetching from server
+  const shelter = await getShelter(shelterId);
   if (!shelter) return <div className="p-20 text-center text-red-500">Shelter not found.</div>;
 
-  // Use searchParams directly
   const searchPar = await searchParams;
   const backUrl = searchPar.backUrl || '/shelters';
 
@@ -72,7 +71,7 @@ export default async function ShelterDetail({ params, searchParams }) {
   return <ShelterClientDetails shelter={shelter} backUrl={backUrl} />;
 }
 
-// Helper
+//Helper to format hours
 function formatHours(hours) {
   if (!hours) return 'Hours not available';
 

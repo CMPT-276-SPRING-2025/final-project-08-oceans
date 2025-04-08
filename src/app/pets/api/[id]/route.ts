@@ -15,6 +15,7 @@ export async function GET(
 
         const petData = await fetchPetDetails(id);
 
+        //If we can't received detailed information, throw error status
         if (!petData || !petData.animal) {
             
             return NextResponse.json(

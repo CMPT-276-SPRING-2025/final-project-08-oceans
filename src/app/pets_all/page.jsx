@@ -1,5 +1,6 @@
 'use client'
 
+// Import necessary dependencies
 import React, { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import PetGrid from '../../components/PetGrid'
@@ -8,17 +9,23 @@ import { saveToSessionStorage, getFromSessionStorage, generateCacheKey } from '.
 import { LoadingBar } from '@/components/ui/loading-bar'
 
 const AllPetsPageClient = () => {
+  // State for managing pets data, loading state, and error messages
   const [pets, setPets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  
+  // Get URL parameters and router instance
   const searchParams = useSearchParams()
   const router = useRouter()
+  
+  // Extract filter parameters from URL
   const type = searchParams.get('type')
   const subType = searchParams.get('subType')
   const location = searchParams.get('location')
 
-  // Function to store filters and navigate to detail page
+  // Function to handle navigation to pet detail page while preserving filters
   const goToDetailPage = (petId) => {
+    // Store current filter settings before navigation
     const currentFilters = {
       type: searchParams.get('type') || '',
       subType: searchParams.get('subType') || '',
@@ -38,6 +45,7 @@ const AllPetsPageClient = () => {
     if (storedFilters) {
       const filters = JSON.parse(storedFilters);
 
+      // Sets parameters for each filter
       const newParams = new URLSearchParams();
       if (filters.type) {
         newParams.set('type', filters.type);
@@ -66,6 +74,7 @@ const AllPetsPageClient = () => {
         let url = '/pets'
         const queryParams = new URLSearchParams()
         
+        //If each paramter exists, set it
         if (type) queryParams.set('type', type)
         if (subType) queryParams.set('subType', subType)
         if (location) queryParams.set('location', location)
@@ -82,6 +91,7 @@ const AllPetsPageClient = () => {
         
         const cachedData = getFromSessionStorage(cacheKey)
         
+        //If cached data exists, use it
         if (cachedData) {
           setPets(cachedData)
           setLoading(false)
@@ -114,7 +124,7 @@ const AllPetsPageClient = () => {
     }
 
     fetchPets()
-  }, [type, subType, location]) // Re-fetch when type, subType, or location changes
+  }, [type, subType, location]) 
 
   // Determine page title based on type and subType
   let pageTitle = 'All Pets Available for Adoption'

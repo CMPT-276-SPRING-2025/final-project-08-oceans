@@ -19,6 +19,7 @@ const FilterButtons = () => {
 
     const newParams = new URLSearchParams(searchParams.toString());
 
+    // Clear existing type and subType parameters
     if (type === 'all') {
       newParams.delete('type');
       newParams.delete('subType');
@@ -42,6 +43,7 @@ const FilterButtons = () => {
     event.preventDefault();
     const newParams = new URLSearchParams(searchParams.toString());
 
+    //If the location input is empty, remove the location parameter from the URL
     if (tempLocation) {
       newParams.set('location', tempLocation);
     } else {

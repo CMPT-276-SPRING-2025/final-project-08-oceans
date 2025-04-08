@@ -73,6 +73,7 @@ async function getPetfinderToken(): Promise<string> {
     cache: 'no-store', 
   });
 
+  // Check if token request was successful
   if (!response.ok) {
     throw new Error(`Failed to get token: ${response.statusText}`);
   }
@@ -82,21 +83,24 @@ async function getPetfinderToken(): Promise<string> {
 }
 
 export async function GET(request: Request) {
+  // Cache URL for potential future use
   const cacheKey = request.url;
   
   try {
-    // Try to get a token for the Petfinder API
+    // Attempt to authenticate with Petfinder API
     let token;
     try {
       token = await getPetfinderToken();
     } catch (tokenError) {
-
-      // For tests, return a 500 error
+      // If authentication fails, return error response
       return NextResponse.json({ error: 'Failed to fetch pets' }, { status: 500 });
     }
 
+    // Parse URL and extract search parameters
     const url = new URL(request.url);
     const { searchParams } = url;
+    
+    // Extract query parameters with fallback to undefined
     const type = searchParams.get('type') || undefined;
     const subType = searchParams.get('subType') || undefined;
     const breed = searchParams.get('breed') || undefined;
@@ -338,7 +342,6 @@ export async function GET(request: Request) {
 
 // Fallback sample data when API fails - uses public URLs instead of local assets
 function getSamplePets(filterType?: string | null): SimplifiedPet[] {
-  // Create sample pets with proper types to match SimplifiedPet
   const samplePets: SimplifiedPet[] = [
     {
       id: 101,
@@ -427,6 +430,7 @@ function getSamplePets(filterType?: string | null): SimplifiedPet[] {
     }
   ];
   
+  //If filter not all, apply filter to type
   if (filterType && filterType !== 'all') {
     return samplePets.filter(pet => pet.type === filterType);
   }

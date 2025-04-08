@@ -56,10 +56,10 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
   });
 
   // Layer style for the route line
-  const routeLayerStyle: mapboxgl.LineLayerSpecification = { // Use mapboxgl.LineLayerSpecification type
+  const routeLayerStyle: mapboxgl.LineLayerSpecification = {
     id: 'route',
     type: 'line',
-    source: 'route', // Corresponds to Source id
+    source: 'route', 
     layout: {
       'line-join': 'round',
       'line-cap': 'round',
@@ -71,8 +71,7 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
     },
   };
 
-  // Function to fetch directions
-  // Function to fetch directions (renamed isLoading and error states)
+  // Function to fetch directions 
   const getDirections = useCallback(async () => {
     if (!startLocationInput) {
       setRouteError('Please enter a starting location.');
@@ -88,8 +87,8 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
 
     setIsLoadingRoute(true);
     setRouteError(null);
-    setRoute(null); // Clear previous route
-    setStartLocationCoords(null); // Clear previous start coords
+    setRoute(null); 
+    setStartLocationCoords(null);
 
     try {
       // Use the API route to get directions
@@ -119,22 +118,20 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
             longitude: data.origin.coordinates[0],
             latitude: data.origin.coordinates[1],
           });
-          setShowStartPopup(true); // Show popup for the start location
+          setShowStartPopup(true); 
 
           // Fly map to fit the route
           if (mapRef.current?.getMap() && data.routes[0].geometry?.coordinates) { // Access map via getMap()
              const coordinates = data.routes[0].geometry.coordinates as [number, number][]; // Assert type
              // Ensure coordinates is a valid array of coordinate pairs
              if (Array.isArray(coordinates) && coordinates.length > 0 && Array.isArray(coordinates[0])) {
-                // Initialize bounds with the first coordinate
                 const bounds = new LngLatBounds(coordinates[0], coordinates[0]); // Use imported LngLatBounds
-                // Extend the bounds with the rest of the coordinates
                 coordinates.forEach(coord => bounds.extend(coord));
 
-                mapRef.current.getMap().fitBounds(bounds, { // Access map via getMap()
-                    padding: { top: 100, bottom: 150, left: 50, right: 50 }, // Adjust padding
+                mapRef.current.getMap().fitBounds(bounds, { 
+                    padding: { top: 100, bottom: 150, left: 50, right: 50 }, 
                     maxZoom: 15,
-                    duration: 1000 // Animation duration
+                    duration: 1000 
                 });
              }
           }
@@ -155,8 +152,6 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
     } finally {
       setIsLoadingRoute(false);
     }
-    // Dependencies updated: removed endLocation, endLocationName, mapboxToken
-    // Added endLocationCoords, destinationName
   }, [startLocationInput, destinationName, endLocationCoords, mode]);
 
   // Effect to fetch token and geocode destination address on mount/change
@@ -164,25 +159,24 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
     const initializeMapData = async () => {
       setIsInitializing(true);
       setInitError(null);
-      setEndLocationCoords(null); // Clear previous coords
-      setMapboxToken(null); // Clear previous token
-      setRoute(null); // Clear route
-      setStartLocationCoords(null); // Clear start coords
-      setStartLocationInput(''); // Clear input
-      setRouteError(null); // Clear errors
+      setEndLocationCoords(null); 
+      setMapboxToken(null); 
+      setRoute(null); 
+      setStartLocationCoords(null); 
+      setStartLocationInput('');
+      setRouteError(null); 
 
       try {
         // Fetch Mapbox Token
-        const tokenRes = await fetch('/api/mapbox'); // Default GET fetches key
+        const tokenRes = await fetch('/api/mapbox'); 
         if (!tokenRes.ok) {
-            const errorData = await tokenRes.json().catch(() => ({})); // Try to parse error
+            const errorData = await tokenRes.json().catch(() => ({})); 
             throw new Error(errorData.error || `Failed to fetch Mapbox token (${tokenRes.status})`);
         }
         const tokenData = await tokenRes.json();
         if (!tokenData.mapboxKey) throw new Error('Mapbox token not found in API response');
         setMapboxToken(tokenData.mapboxKey);
 
-        // Geocode Destination Address
         const geocodeParams = new URLSearchParams({
           action: 'geocode',
           address: destinationAddress,
@@ -198,18 +192,17 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
           const coords = geocodeData.features[0].coordinates;
           const newCoords = { longitude: coords[0], latitude: coords[1] };
           setEndLocationCoords(newCoords);
-          // Set viewport center after geocoding succeeds
           setViewport(prev => ({
               ...prev,
               longitude: newCoords.longitude,
               latitude: newCoords.latitude,
-              zoom: 12 // Zoom in after finding location
+              zoom: 12 
           }));
            // Fly map to the new destination
            if (mapRef.current?.getMap()) {
                mapRef.current.getMap().flyTo({ center: [newCoords.longitude, newCoords.latitude], zoom: 12, duration: 1000 });
            }
-           setShowEndPopup(true); // Show destination popup initially
+           setShowEndPopup(true);
         } else {
           throw new Error(`Could not find coordinates for: ${destinationAddress}`);
         }
@@ -227,8 +220,7 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
        setIsInitializing(false);
        setInitError("Destination address is required.");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destinationAddress]); // Rerun when destinationAddress changes
+  }, [destinationAddress]); 
 
   // Helper to format duration (seconds to minutes/hours)
   const formatDuration = (durationSeconds: number): string => {
@@ -245,7 +237,6 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
    const formatDistance = (distanceMeters: number): string => {
      if (!distanceMeters) return 'N/A';
      const kilometers = distanceMeters / 1000;
-     // Optionally convert to miles: const miles = kilometers * 0.621371;
      return `${kilometers.toFixed(1)} km`;
    };
 
@@ -272,15 +263,13 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
     <div style={{ height: '100%', width: '100%', position: 'relative', border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden' }}>
       <Map
         ref={mapRef}
-        // Use viewport for controlled map state if needed, or initialViewState for uncontrolled
-        // For flying, controlled might be better. Let's keep viewport controlled for now.
         longitude={viewport.longitude}
         latitude={viewport.latitude}
         zoom={viewport.zoom}
         pitch={viewport.pitch}
         bearing={viewport.bearing}
-        onMove={evt => setViewport(evt.viewState)} // Update viewport state on move
-        mapboxAccessToken={mapboxToken} // Use fetched token
+        onMove={evt => setViewport(evt.viewState)} 
+        mapboxAccessToken={mapboxToken}
         mapStyle="mapbox://styles/mapbox/streets-v11"
         style={{ width: '100%', height: '100%' }}
       >
@@ -296,7 +285,7 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
            </button>
         </Marker>
         )}
-        {/* End Location Popup (use endLocationCoords and destinationName) */}
+        {/* End Location Popup */}
         {endLocationCoords && showEndPopup && (
           <Popup
             longitude={endLocationCoords.longitude}
@@ -316,7 +305,6 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
         {startLocationCoords && (
           <Marker longitude={startLocationCoords.longitude} latitude={startLocationCoords.latitude} anchor="bottom">
              <button onClick={() => setShowStartPopup(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-               {/* Use a distinct icon for origin */}
                <svg height="25" viewBox="0 0 24 24" fill="#007C41" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
              </button>
           </Marker>
@@ -327,8 +315,8 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
             latitude={startLocationCoords.latitude}
             anchor="top"
             onClose={() => setShowStartPopup(false)}
-            closeOnClick={false} // Keep open until explicitly closed
-            offset={25} // Offset popup from marker center
+            closeOnClick={false} 
+            offset={25} 
           >
             <div>
               <strong>Start:</strong><br/> {startLocationInput}
@@ -427,15 +415,12 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
                 <strong className="block mb-1 text-sm font-medium text-gray-700">Route Details:</strong>
                 <p className="text-sm text-gray-600">Distance: {formatDistance(route.distance)}</p>
                 <p className="text-sm text-gray-600">Estimated Time: {formatDuration(route.duration)}</p>
-                {/* Optional: Add a button/link to view steps if needed */}
               </div>
             )}
-            {/* End of Route Info */}
           </>
         )}
-        {/* End of Conditional Rendering */}
-      </div> {/* End of Input Panel Div */}
-    </div> /* End of Main Component Div */
+      </div> 
+    </div> 
   );
 };
 

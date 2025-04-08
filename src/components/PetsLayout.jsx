@@ -8,13 +8,13 @@ const PetsLayoutClient = ({ children }) => {
     const searchParams = useSearchParams();
     const type = searchParams.get('type') || 'all';
 
+    // Get the current pathname to determine if we are on the pets page
     const handleCategoryChange = (category) => {
       router.push(category === 'all' ? '/pets_all' : `/pets_all?type=${category}`);
     };
 
     return (
         <div className="w-full pt-[100px]">
-          {/* Tabs Navigation */}
           <Tabs value={type} onValueChange={handleCategoryChange} className="w-full flex justify-center items-center">
             <TabsList className="bg-transparent p-0 h-auto gap-4 flex justify-center">
               {["all", "cat", "dog", "bird"].map((category) => (
@@ -30,7 +30,6 @@ const PetsLayoutClient = ({ children }) => {
             </TabsList>
           </Tabs>
 
-          {/* Render Children Content */}
           <div className="mt-6">{children}</div>
         </div>
     );

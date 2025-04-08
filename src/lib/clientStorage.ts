@@ -1,14 +1,17 @@
-
-// Type definitions for stored data
 interface StorageItem<T> {
   data: T;
   expiry: number;
 }
 
-//Saves data to sessionStorage with an expiration time
+/*
+saveToSessionStorage: Converts item into StorageItem and saves them into sessional storage
+Input: API key as string, data, expiry time
+*/
 export function saveToSessionStorage<T>(key: string, data: T, expiryMinutes: number = 60): void {
   try {
-    if (typeof window === 'undefined') return; // Don't run on server
+
+    // Check if the code is running in a browser environment
+    if (typeof window === 'undefined') return;
 
     const now = new Date();
     const item: StorageItem<T> = {
@@ -22,7 +25,9 @@ export function saveToSessionStorage<T>(key: string, data: T, expiryMinutes: num
   }
 }
 
-//Retrieves data from sessionStorage if it exists and hasn't expired
+/*
+getFromSessionStorage: Takes in key and fetches the sessional saved item 
+*/
 export function getFromSessionStorage<T>(key: string): T | null {
   try {
     if (typeof window === 'undefined') return null; 
@@ -33,7 +38,7 @@ export function getFromSessionStorage<T>(key: string): T | null {
     const item: StorageItem<T> = JSON.parse(itemStr);
     const now = new Date();
 
-    // Check if the item has expired
+    //If the item is expired, remove it from sessionStorage and return null
     if (now.getTime() > item.expiry) {
       sessionStorage.removeItem(key);
 
@@ -47,10 +52,10 @@ export function getFromSessionStorage<T>(key: string): T | null {
   }
 }
 
-//Removes an item from sessionStorage
+//removeFromSessionStorage: Takes in key as string and removes the associated item from storage
 export function removeFromSessionStorage(key: string): void {
   try {
-    if (typeof window === 'undefined') return; // Don't run on server
+    if (typeof window === 'undefined') return;
 
     sessionStorage.removeItem(key);
 
@@ -59,7 +64,7 @@ export function removeFromSessionStorage(key: string): void {
   }
 }
 
-
+//generateCacheKey: Takes in string as key and record, and returns generated cache key for it to store in storage
 export function generateCacheKey(baseKey: string, params: Record<string, any> = {}): string {
   const sortedParams = Object.keys(params)
     .sort()
@@ -70,20 +75,20 @@ export function generateCacheKey(baseKey: string, params: Record<string, any> = 
   return sortedParams ? `${baseKey}_${sortedParams}` : baseKey;
 }
 
-//Clears all Love At First Paw data from sessionStorage
+//clearSessionStorage: takes in string prefix as the petfinder API, clears all keys associated from sessional storage
 export function clearSessionStorage(prefix: string = 'petfinder_'): void {
   try {
-    if (typeof window === 'undefined') return; // Don't run on server
+    if (typeof window === 'undefined') return;
 
-    // If no prefix specified, clear everything
+    //Checks if the prefix is a string and not empty
     if (!prefix) {
       sessionStorage.clear();
 
       return;
     }
 
-    // Clear only items with the given prefix
     Object.keys(sessionStorage).forEach(key => {
+      //Checks if the key starts with the prefix
       if (key.startsWith(prefix)) {
         sessionStorage.removeItem(key);
       }
