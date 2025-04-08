@@ -6,13 +6,13 @@ import { assets } from '@/assets/assets';
 import Image from 'next/image';
 
 const pets = [
-    { name: 'Dogs', image: assets.dog_quiz, path: '/quiz/dogs' },
-    { name: 'Cats', image: assets.cat_quiz, path: '/quiz/cats' },
-    { name: 'Fish', image: assets.fish_quiz, path: '/quiz/fish' },
-    { name: 'Birds', image: assets.bird_quiz, path: '/quiz/birds' },
-    { name: 'Small pets', image: assets.smallpets_quiz, path: '/quiz/smallpets' },
-    { name: 'Reptiles', image: assets.reptiles_quiz, path: '/quiz/reptiles' },
-    { name: 'or.....Let us decide!', image: assets.general_quiz, path: '/quiz/random' },
+  { name: 'Dogs', image: assets.dog_quiz, path: '/quiz/dogs' },
+  { name: 'Cats', image: assets.cat_quiz, path: '/quiz/cats' },
+  { name: 'Fish', image: assets.fish_quiz, path: '/quiz/fish' },
+  { name: 'Birds', image: assets.bird_quiz, path: '/quiz/birds' },
+  { name: 'Small pets', image: assets.smallpets_quiz, path: '/quiz/smallpets' },
+  { name: 'Reptiles', image: assets.reptiles_quiz, path: '/quiz/reptiles' },
+  { name: 'or.....Let us decide!', image: assets.general_quiz, path: '/quiz/random' },
 ];
 
 const Quiz = () => {
@@ -21,10 +21,6 @@ const Quiz = () => {
   const handleClick = (path) => {
     router.push(path);
   };
-
-
-  const regularCardSizes = "(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw";
-  const wideCardSizes = "(max-width: 767px) 50vw, (max-width: 1023px) 66vw, 50vw"; 
 
   return (
     <div className="w-full flex flex-col justify-center items-center bg-orange-50 min-h-screen py-10"> 
@@ -37,19 +33,21 @@ const Quiz = () => {
             <Card
               key={index}
               className={`cursor-pointer shadow-md hover:shadow-2xl hover:bg-orange-300 hover:translate-y-[-8px] transition duration-300 bg-orange-100
-                p-3 md:p-4 text-center rounded-xl flex flex-col overflow-hidden
+                 text-center rounded-xl flex flex-col overflow-hidden
                 ${isWideCard ? "h-48 md:h-56 md:col-span-2" : "h-48 md:h-56 w-full"}`} 
               onClick={() => handleClick(pet.path)}
             >
-              <CardContent className="text-lg md:text-xl font-medium py-2 flex-shrink-0">{pet.name}</CardContent>
-              <div className="relative flex-grow flex items-center justify-center min-h-0 p-1 md:p-2"> 
-                <Image
-                  src={pet.image}
-                  alt={pet.name}
-                  fill
-                  className={isWideCard ? "object-cover" : "object-contain"}
-                  sizes={isWideCard ? wideCardSizes : regularCardSizes}
-                />
+              <CardContent className="text-lg md:text-xl pt-10 flex-shrink-0 font-semibold">
+                {pet.name}
+              </CardContent>
+              <div className="flex-grow flex items-end justify-center mt-auto min-h-0">
+              <Image
+              src={pet.image}
+              alt={pet.name}
+              width={isWideCard ? 450 : 100} 
+              className="object-contain"
+              style={{ height: 'auto' }} 
+            />
               </div>
             </Card>
           );
