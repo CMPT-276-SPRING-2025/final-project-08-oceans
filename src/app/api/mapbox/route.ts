@@ -195,8 +195,6 @@ export async function POST(request: NextRequest) {
           if (result.status === 'fulfilled') {
             return result.value; // Successfully geocoded
           } else {
-            console.error(`Failed to geocode address "${addresses[index]}":`, result.reason);
-            // Return a structure indicating failure for this address
             return { query: addresses[index], features: [], error: result.reason?.message || 'Geocoding failed' };
           }
         });
@@ -249,7 +247,6 @@ async function geocodeAddress(address: string) {
   
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Geocoding error for "${address}": ${response.status} ${response.statusText}`, errorBody);
     throw new Error(`Geocoding error: ${response.statusText}`);
   }
   
