@@ -1,9 +1,11 @@
-import React from 'react';
+// Removed "use client"
+import React from 'react'; // Removed useState import
 import Image from 'next/image';
 import { assets } from '@/assets/assets';
 import Link from 'next/link';
 import ShelterDetailMapWrapper from '@/components/map/ShelterDetailMapWrapper';
-import { Button } from '@/components/ui/button';
+// Removed DirectionsMap import
+import ShelterClientDetails from '@/components/ShelterClientDetails'; // Import the new client component
 
 
 async function getShelter(id) {
@@ -53,85 +55,20 @@ async function getShelter(id) {
   }
 }
 
+// Reverted to async function for server-side data fetching
 export default async function ShelterDetail({ params, searchParams }) {
   // Extract the ID value before passing to client components
-  const { id } = await params;
+  const { id } = params; // Use params directly
   const shelterId = id;
-  
-  const shelter = await getShelter(shelterId);
+
+  const shelter = await getShelter(shelterId); // Fetch data on the server
   if (!shelter) return <div className="p-20 text-center text-red-500">Shelter not found.</div>;
 
-  const searchPar = await searchParams;
-  const backUrl = searchPar.backUrl || '/shelters';
+  // Use searchParams directly
+  const backUrl = searchParams.backUrl || '/shelters';
 
-  return (
-    <div className="max-w-6xl mx-auto p-8 pt-28 space-y-12">
-      {/* Header Info */}
-      <div className="flex flex-col md:flex-row justify-between items-start gap-8 w-full">
-        <Link
-          href={backUrl}
-          className="ml-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline"
-        >
-          Back
-        </Link>
-        <div className="flex items-start gap-6 w-full md:w-2/3">
-          <div className="relative w-[180px] h-[180px] bg-white rounded-lg flex items-center justify-center overflow-hidden">
-            <Image
-              src={shelter.photos?.[0]?.medium || assets.icon_paw}
-              alt="shelter logo" 
-              priority
-              fill
-              sizes='180px'
-              className="object-cover"
-            />
-          </div>
-  
-          <div className="flex flex-col space-y-3">
-            <h1 className="text-3xl font-bold text-gray-800">{shelter.name}</h1>
-            <hr className="border-t border-gray-300" />
-  
-            <div className="flex gap-6 items-start pt-4">
-              <Image src={assets.location} alt="location" width={40} />
-              <div className="text-lg text-gray-700">
-                <p>{shelter.location || 'Location not available'}</p>
-                <p className="text-sm mt-2 text-gray-500">{shelter.hours}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-  
-        <div className="flex flex-col items-center gap-3 w-full md:w-1/3">
-          {shelter.website ? (
-            <Link 
-              href={shelter.website}
-              target="_blank"
-              className="px-6 py-2 border-2 text-orange-500 border-orange-500 font-semibold rounded-full hover:bg-orange-500 hover:text-white transition duration-300"
-            >
-              VIEW OUR SHELTER
-            </Link>
-          ) : null}
-
-          <div className="w-full border-t border-gray-200" />
-          <div className="flex gap-6 items-center self-start">
-            <Image src={assets.email} alt="email" width={30} />
-            <a href={`mailto:${shelter.email}`} className="text-lg text-orange-500">{shelter.email || 'N/A'}</a>
-          </div>
-          <div className="w-full border-t border-gray-200" />
-          <div className="flex gap-6 items-center self-start">
-            <Image src={assets.phone} alt="phone" width={30} />
-            <a href={`tel:${shelter.contact}`} className="text-lg text-orange-500">{shelter.contact || 'N/A'}</a>
-          </div>
-        </div>
-      </div>
-  
-      <hr className="border-t border-gray-300" />
-  
-      {/* Static Map */}
-      <div className="w-full h-96 rounded-lg overflow-hidden shadow">
-        <ShelterDetailMapWrapper shelter={shelter} />
-      </div>
-    </div>
-  );
+  // Render the client component, passing the fetched data as props
+  return <ShelterClientDetails shelter={shelter} backUrl={backUrl} />;
 }
 
 // Helper
