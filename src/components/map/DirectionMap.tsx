@@ -5,6 +5,7 @@ import mapboxgl, { LngLatBounds } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 // Keep react-map-gl imports
 import Map, { MapRef, NavigationControl, GeolocateControl, Marker, Popup, Source, Layer } from 'react-map-gl/mapbox';
+import { LocationSearchInput } from '../ui/locationSeachInput';
 
 // Define types for props and state
 interface Coordinates {
@@ -13,10 +14,9 @@ interface Coordinates {
 }
 
 interface DirectionsMapProps {
-  destinationAddress: string; // Changed from endLocation (Coordinates)
-  destinationName: string; // Renamed from endLocationName for clarity
+  destinationAddress: string; 
+  destinationName: string; 
   onClose: () => void;
-  // mapboxToken is removed, will be fetched internally
 }
 
 interface RouteData {
@@ -139,7 +139,6 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
              }
           }
         } else {
-           console.warn("Origin coordinates not found in navigation response.");
            // Attempt to center map based on destination if start fails
             if (mapRef.current?.getMap() && endLocationCoords) { // Check endLocationCoords too
                 mapRef.current.getMap().flyTo({ center: [endLocationCoords.longitude, endLocationCoords.latitude], zoom: 13 });
@@ -150,7 +149,6 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
         throw new Error(data.error || 'No routes found or geometry missing.');
       }
     } catch (err: any) {
-      console.error('Failed to fetch directions:', err);
       setRouteError(err.message || 'Failed to fetch directions.');
       setRoute(null);
       setStartLocationCoords(null);
@@ -216,7 +214,6 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
           throw new Error(`Could not find coordinates for: ${destinationAddress}`);
         }
       } catch (err: any) {
-        console.error('Initialization error:', err);
         setInitError(err.message || 'Failed to initialize map data.');
       } finally {
         setIsInitializing(false);
@@ -384,12 +381,9 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
             {/* Start Location Input */}
             <div className="mb-3">
               <label htmlFor="startLocation" className="block mb-1 text-sm font-medium text-gray-700">Start Location:</label>
-              <input
-                type="text"
-                id="startLocation"
+              <LocationSearchInput
                 value={startLocationInput}
                 onChange={(e) => setStartLocationInput(e.target.value)}
-                placeholder="Enter address or place name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
               />
             </div>

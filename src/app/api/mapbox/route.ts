@@ -244,7 +244,6 @@ async function geocodeAddress(address: string) {
   const encodedAddress = encodeURIComponent(address);
   const url = `${MAPBOX_BASE_URL}${GEOCODING_ENDPOINT}/${encodedAddress}.json?access_token=${process.env.MAPBOX_KEY}`;
   
-  console.log(`Geocoding address: "${address}" with URL: ${url}`); // Log geocode request
 
   const response = await fetch(url);
   
@@ -255,13 +254,6 @@ async function geocodeAddress(address: string) {
   }
   
   const data = await response.json();
-  console.log(`Geocoding result for "${address}":`, JSON.stringify(data.features.map((f: any) => ({ // Log key details
-      id: f.id,
-      place_name: f.place_name,
-      coordinates: f.geometry.coordinates,
-      place_type: f.place_type,
-      relevance: f.relevance
-  })), null, 2));
   
   return {
     query: address,
@@ -339,7 +331,6 @@ async function getDirections(
   
   const url = `${MAPBOX_BASE_URL}${DIRECTIONS_ENDPOINT}/${profile}/${coordinatesStr}?alternatives=true&geometries=geojson&overview=full&steps=true&access_token=${process.env.MAPBOX_KEY}`;
   
-  console.log('Requesting Mapbox Directions URL:', url); // Log the URL
   
   const response = await fetch(url);
   
@@ -362,18 +353,16 @@ async function getDirections(
          errorMessage += ` - ${response.statusText}`;
        }
     }
-    console.error(`Mapbox Directions API Error: ${response.status} ${response.statusText}`, errorBody); // Log status and original body
+
     throw new Error(errorMessage); // Throw the more detailed error message
   }
   
   const data = await response.json();
-  console.log('Mapbox Directions API Success Response Data:', JSON.stringify(data, null, 2)); // Log successful data
+
   
   // Check for NoRoute code even in successful responses
   if (data.code === 'NoRoute') {
-     console.warn('Mapbox returned success status but NoRoute code.');
-     // Optionally, you could throw an error here too, or let the frontend handle the empty routes array
-     // throw new Error('Directions API Error: No route found');
+     throw new Error('Directions API Error: No route found');
   }
   
   return {
@@ -393,12 +382,11 @@ async function getDirections(
     })),
     waypoints: data.waypoints,
     origin: {
-      name: origin, // Keep original origin string
+      name: origin,
       coordinates: originPoint,
     },
     destination: {
-      name: finalDestinationName, // Use the determined destination name
-      // Removed duplicate name property
+      name: finalDestinationName, 
       coordinates: destPoint,
     },
     mode,
