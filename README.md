@@ -114,8 +114,8 @@ Before running the project locally, ensure you have the following installed:
   inside the project directory first, this will give you full control over the files and should fix the permission error.
 
 ## Videos and Website
-[Love At FIrst Paw Website, deployed with Vercel.](https://love-at-first-paw.vercel.app/)
-[Love At First Paw Video Demo](https://www.youtube.com/watch?v=2pronTOjmgk)
-[Love At First Paw Planning Video](https://www.youtube.com/watch?v=47HbeDINck8)
+[Love At FIrst Paw Website, deployed with Vercel.](https://love-at-first-paw.vercel.app/)\
+[Love At First Paw Video Demo](https://www.youtube.com/watch?v=2pronTOjmgk)\
+[Love At First Paw Planning Video](https://www.youtube.com/watch?v=47HbeDINck8)\
 [Love At First Paw Final Video](https://www.youtube.com/watch?v=fSDER6X2cjM)
 
