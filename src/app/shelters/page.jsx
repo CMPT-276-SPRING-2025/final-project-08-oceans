@@ -262,7 +262,7 @@ const Shelters = () => {
               <Card className="flex bg-orange-100 p-4 rounded-2xl shadow-md ">
                 <div className="flex items-center gap-2">
                   {/* Shelter Image */}
-                  <div className="w-40 h-40 bg-white rounded-lg flex items-center justify-center border">
+                  <div className="w-40 h-40 bg-white rounded-lg flex items-center justify-center">
                     {shelter.photos && shelter.photos.length > 0 ? (
                       <img 
                         src={shelter.photos[0].medium} 

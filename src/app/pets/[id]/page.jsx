@@ -82,7 +82,7 @@ export default function PetDetailPage({ params, searchParams }) {
   }, [id]);
 
   return (
-    <div className="container mx-auto pt-[100px] p-10 min-h-screen">
+    <div className="container mx-auto pt-[12vh] p-10 min-h-screen">
       <LoadingBar 
         isLoading={loading}
         message={loading ? "Loading Pet Details..." : ""}

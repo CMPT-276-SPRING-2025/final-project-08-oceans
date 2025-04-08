@@ -17,7 +17,7 @@ export default function ShelterClientDetails({ shelter, backUrl }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-8 pt-28 space-y-12">
+    <div className="max-w-6xl mx-auto p-8 pt-[12vh] space-y-12">
       {/* Header Info */}
       <div className="flex flex-col md:flex-row justify-between items-start gap-8 w-full">
         <Link

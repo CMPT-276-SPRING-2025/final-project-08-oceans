@@ -36,7 +36,7 @@ const Quiz = () => {
           return (
             <Card
               key={index}
-              className={`cursor-pointer shadow-md hover:shadow-2xl hover:bg-orange-300 transition duration-300 bg-orange-100
+              className={`cursor-pointer shadow-md hover:shadow-2xl hover:bg-orange-300 hover:translate-y-[-8px] transition duration-300 bg-orange-100
                 p-3 md:p-4 text-center rounded-xl flex flex-col overflow-hidden
                 ${isWideCard ? "h-48 md:h-56 md:col-span-2" : "h-48 md:h-56 w-full"}`} 
               onClick={() => handleClick(pet.path)}
