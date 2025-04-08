@@ -42,12 +42,11 @@ const Quiz = () => {
               </CardContent>
               <div className="flex-grow flex items-end justify-center mt-auto min-h-0">
               <Image
-              src={pet.image}
-              alt={pet.name}
-              width={isWideCard ? 450 : 100} 
-              className="object-contain"
-              style={{ height: 'auto' }} 
-            />
+                src={pet.image}
+                alt={pet.name}
+                className="object-contain"
+                style={{ width: isWideCard ? '450px' : '100px', height: 'auto' }}
+              />
               </div>
             </Card>
           );
