@@ -81,7 +81,6 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     questions.forEach((q, index) => {
       const key = q.apiKey || q.apiField;
       const answer = selectedAnswers[index];
-      console.log(key + ", " + answer)
       if (!key || !answer) return;
 
       // DOGS
