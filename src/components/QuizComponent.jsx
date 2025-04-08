@@ -223,7 +223,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
 
       if (!key || !answer) return;
 
-      const skipKeys = ['size', 'breed'];
+      const skipKeys = ['size', 'breed', 'affectionate'];
 
       if (['bird', 'fish', 'reptile', 'small-pets'].includes(type)) {
         skipKeys.push('age');
@@ -262,11 +262,8 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
     });
 
     return Object.entries(query)
-    .flatMap(([k, v]) =>
-      Array.isArray(v) ? v.map(val => `${k}=${encodeURIComponent(val)}`) : [`${k}=${encodeURIComponent(v)}`]
-    )
-    .join('&');
-
+      .map(([k, v]) => `${k}=${Array.isArray(v) ? v.join(',') : v}`)
+      .join('&');
   };
 
 

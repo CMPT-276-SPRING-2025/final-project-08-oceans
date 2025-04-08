@@ -8,7 +8,7 @@ const catQuestions = [
   {
     question: "What age range are you looking for in a cat?",
     options: [
-      { label: "Kitten", value: "kitten" },
+      { label: "Kitten", value: "baby" },
       { label: "Junior", value: "young" },
       { label: "Adult", value: "adult" },
       { label: "Senior", value: "senior" },

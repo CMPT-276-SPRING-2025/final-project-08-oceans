@@ -88,7 +88,7 @@ const ResultsPage = () => {
   };
 
   return (
-    <div className="w-full text-center min-h-screen pt-28 px-10">
+    <div className="w-full text-center min-h-screen pt-[15vh] pb-[10vh] px-10">
       <LoadingBar
         isLoading={loading}
         message={loading ? "Loading Pets..." : ""} // Change message slightly
@@ -124,7 +124,7 @@ const ResultsPage = () => {
       </div>
 
       {pets.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 px-26">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 w-full max-w-screen-xl mx-auto px-4">
           {pets.map((pet) => (
             <Card
               key={pet.id}
