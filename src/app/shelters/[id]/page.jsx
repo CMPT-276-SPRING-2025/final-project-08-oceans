@@ -58,14 +58,15 @@ async function getShelter(id) {
 // Reverted to async function for server-side data fetching
 export default async function ShelterDetail({ params, searchParams }) {
   // Extract the ID value before passing to client components
-  const { id } = params; // Use params directly
+  const { id } = await params; // Use params directly
   const shelterId = id;
 
   const shelter = await getShelter(shelterId); // Fetch data on the server
   if (!shelter) return <div className="p-20 text-center text-red-500">Shelter not found.</div>;
 
   // Use searchParams directly
-  const backUrl = searchParams.backUrl || '/shelters';
+  const searchPar = await searchParams;
+  const backUrl = searchPar.backUrl || '/shelters';
 
   // Render the client component, passing the fetched data as props
   return <ShelterClientDetails shelter={shelter} backUrl={backUrl} />;

@@ -309,16 +309,13 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
       }
 
       if (!allPets.length) {
-        console.log("No pets found with strict query, trying relaxed query...");
         relaxedQuery = buildRelaxedQuery();
         const relaxedRes = await fetch(`/pets?type=${actualType}${subType ? `&subType=${subType}` : ''}&${relaxedQuery}`);
         const relaxedData = await relaxedRes.json();
         if (relaxedData?.pets?.length) {
-          console.log(`Found ${relaxedData.pets.length} pets with relaxed query.`);
           allPets = relaxedData.pets;
           localStorage.setItem('fallbackMessage', 'We couldn\'t find an exact match, but here are some similar pets!');
         } else {
-          console.log("No pets found with relaxed query either.");
           localStorage.removeItem('fallbackMessage'); // Clear any previous fallback message
         }
       } else {
