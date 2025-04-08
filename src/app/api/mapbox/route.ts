@@ -3,8 +3,8 @@ import { mapboxCache } from '@/lib/mapboxCache';
 
 const MAPBOX_BASE_URL = 'https://api.mapbox.com';
 const GEOCODING_ENDPOINT = '/geocoding/v5/mapbox.places';
-const DIRECTIONS_ENDPOINT = '/directions/v5/mapbox';
-const STATIC_IMAGE_ENDPOINT = '/styles/v1/mapbox/streets-v11/static';
+const DIRECTIONS_ENDPOINT = '/directions/v5'; // Remove trailing /mapbox
+
 
 
 const NAVIGATION_PROFILES = {
@@ -143,7 +143,8 @@ export async function GET(request: NextRequest) {
           message: 'Use this token for client-side map rendering'
         });
     }
-  } catch (error) {
+  } catch (error: any) { // Catch specific error type
+    console.error('Mapbox API GET error:', error);
     return NextResponse.json(
       // Return the specific error message
       { error: error.message || 'Error processing mapbox request' },
@@ -185,7 +186,6 @@ export async function POST(request: NextRequest) {
             
             const result = await geocodeAddress(address);
             mapboxCache.set(`geocode:${address}`, result);
-
             return result;
           })
         );
@@ -231,7 +231,6 @@ export async function POST(request: NextRequest) {
         );
     }
   } catch (error) {
-
     return NextResponse.json(
       // Return the specific error message
       { error: error.message || 'Error processing mapbox request' },
