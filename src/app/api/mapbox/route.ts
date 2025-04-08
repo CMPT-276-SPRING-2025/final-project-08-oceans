@@ -8,9 +8,9 @@ const STATIC_IMAGE_ENDPOINT = '/styles/v1/mapbox/streets-v11/static';
 
 
 const NAVIGATION_PROFILES = {
-  driving: 'mapbox/driving',
-  walking: 'mapbox/walking',
-  cycling: 'mapbox/cycling',
+  driving: 'driving', // Removed 'mapbox/' prefix
+  walking: 'walking', // Removed 'mapbox/' prefix
+  cycling: 'cycling', // Removed 'mapbox/' prefix
 };
 
 type GeocodeRequest = {

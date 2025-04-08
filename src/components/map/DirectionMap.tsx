@@ -1,17 +1,10 @@
 "use client"
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import mapboxgl, { LngLatBounds } from 'mapbox-gl'; // Import LngLatBounds
+// Keep mapboxgl import for types if needed, or remove if react-map-gl types suffice
+import mapboxgl, { LngLatBounds } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import Map from 'react-map-gl/mapbox';
-import { MapRef } from 'react-map-gl/mapbox'; // Import MapRef separately
-import {
-    NavigationControl,
-    GeolocateControl,
-    Marker,
-    Popup,
-    Source,
-    Layer
-  } from 'react-map-gl/mapbox';
+// Keep react-map-gl imports
+import Map, { MapRef, NavigationControl, GeolocateControl, Marker, Popup, Source, Layer } from 'react-map-gl/mapbox';
 
 // Define types for props and state
 interface Coordinates {
@@ -20,10 +13,10 @@ interface Coordinates {
 }
 
 interface DirectionsMapProps {
-  endLocation: Coordinates;
-  endLocationName: string;
-  mapboxToken: string;
-  onClose: () => void; // Add onClose prop for closing the popup
+  destinationAddress: string; // Changed from endLocation (Coordinates)
+  destinationName: string; // Renamed from endLocationName for clarity
+  onClose: () => void;
+  // mapboxToken is removed, will be fetched internally
 }
 
 interface RouteData {
@@ -33,23 +26,31 @@ interface RouteData {
   steps: any[];
 }
 
-const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationName, mapboxToken, onClose }) => {
+const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, destinationName, onClose }) => {
+  // State for fetched data
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  const [endLocationCoords, setEndLocationCoords] = useState<Coordinates | null>(null);
+  const [isInitializing, setIsInitializing] = useState<boolean>(true); // For initial token/geocode fetch
+  const [initError, setInitError] = useState<string | null>(null); // Error during init
+
+  // State for user interaction and route finding
   const [startLocationInput, setStartLocationInput] = useState<string>('');
   const [startLocationCoords, setStartLocationCoords] = useState<Coordinates | null>(null);
   const [mode, setMode] = useState<'driving' | 'walking' | 'cycling'>('driving');
   const [route, setRoute] = useState<RouteData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoadingRoute, setIsLoadingRoute] = useState<boolean>(false); // Renamed from isLoading
+  const [routeError, setRouteError] = useState<string | null>(null); // Renamed from error
   const [showStartPopup, setShowStartPopup] = useState<boolean>(false);
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false); // State for panel collapse
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
   const [showEndPopup, setShowEndPopup] = useState<boolean>(false);
 
   const mapRef = useRef<MapRef | null>(null); // Use MapRef type
 
+  // Initial viewport - centered vaguely until coords are fetched
   const [viewport, setViewport] = useState({
-    longitude: endLocation.longitude,
-    latitude: endLocation.latitude,
-    zoom: 12,
+    longitude: -123.12, // Default to Vancouver area or similar
+    latitude: 49.28,
+    zoom: 9, // Start zoomed out
     pitch: 0,
     bearing: 0
   });
@@ -71,27 +72,33 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationN
   };
 
   // Function to fetch directions
+  // Function to fetch directions (renamed isLoading and error states)
   const getDirections = useCallback(async () => {
     if (!startLocationInput) {
-      setError('Please enter a starting location.');
+      setRouteError('Please enter a starting location.');
       setRoute(null);
       setStartLocationCoords(null);
       return;
     }
+    // Ensure destination coordinates are available before fetching route
+    if (!endLocationCoords) {
+        setRouteError('Destination coordinates not yet available. Please wait or try again.');
+        return;
+    }
 
-    setIsLoading(true);
-    setError(null);
+    setIsLoadingRoute(true);
+    setRouteError(null);
     setRoute(null); // Clear previous route
     setStartLocationCoords(null); // Clear previous start coords
 
     try {
       // Use the API route to get directions
+      // Use fetched endLocationCoords
       const params = new URLSearchParams({
         action: 'navigation',
-        origin: startLocationInput, // Origin still needs geocoding
-        // Pass destination coordinates directly
-        destinationCoords: `${endLocation.longitude},${endLocation.latitude}`,
-        destinationName: endLocationName, // Pass name separately for potential display
+        origin: startLocationInput,
+        destinationCoords: `${endLocationCoords.longitude},${endLocationCoords.latitude}`,
+        destinationName: destinationName, // Use prop
         mode: mode,
       });
 
@@ -134,8 +141,8 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationN
         } else {
            console.warn("Origin coordinates not found in navigation response.");
            // Attempt to center map based on destination if start fails
-            if (mapRef.current?.getMap()) { // Access map via getMap()
-                mapRef.current.getMap().flyTo({ center: [endLocation.longitude, endLocation.latitude], zoom: 13 });
+            if (mapRef.current?.getMap() && endLocationCoords) { // Check endLocationCoords too
+                mapRef.current.getMap().flyTo({ center: [endLocationCoords.longitude, endLocationCoords.latitude], zoom: 13 });
             }
         }
 
@@ -144,33 +151,87 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationN
       }
     } catch (err: any) {
       console.error('Failed to fetch directions:', err);
-      setError(err.message || 'Failed to fetch directions.');
+      setRouteError(err.message || 'Failed to fetch directions.');
       setRoute(null);
       setStartLocationCoords(null);
     } finally {
-      setIsLoading(false);
+      setIsLoadingRoute(false);
     }
-  }, [startLocationInput, endLocationName, endLocation, mode, mapboxToken]); // Added mapboxToken to dependency array as it's used in fetch
+    // Dependencies updated: removed endLocation, endLocationName, mapboxToken
+    // Added endLocationCoords, destinationName
+  }, [startLocationInput, destinationName, endLocationCoords, mode]);
 
-  // Effect to recenter map when endLocation changes
+  // Effect to fetch token and geocode destination address on mount/change
   useEffect(() => {
-    setViewport(prev => ({
-      ...prev,
-      longitude: endLocation.longitude,
-      latitude: endLocation.latitude,
-      zoom: 12 // Reset zoom or adjust as needed
-    }));
-     if (mapRef.current?.getMap()) { // Access map via getMap()
-        mapRef.current.getMap().flyTo({ center: [endLocation.longitude, endLocation.latitude], zoom: 12 });
-     }
-    // Clear route and input when destination changes
-    setRoute(null);
-    setStartLocationCoords(null);
-    setStartLocationInput('');
-    setError(null);
-    setShowStartPopup(false);
-    setShowEndPopup(false);
-  }, [endLocation, endLocationName]); // Depend on coordinates and name
+    const initializeMapData = async () => {
+      setIsInitializing(true);
+      setInitError(null);
+      setEndLocationCoords(null); // Clear previous coords
+      setMapboxToken(null); // Clear previous token
+      setRoute(null); // Clear route
+      setStartLocationCoords(null); // Clear start coords
+      setStartLocationInput(''); // Clear input
+      setRouteError(null); // Clear errors
+
+      try {
+        // Fetch Mapbox Token
+        const tokenRes = await fetch('/api/mapbox'); // Default GET fetches key
+        if (!tokenRes.ok) {
+            const errorData = await tokenRes.json().catch(() => ({})); // Try to parse error
+            throw new Error(errorData.error || `Failed to fetch Mapbox token (${tokenRes.status})`);
+        }
+        const tokenData = await tokenRes.json();
+        if (!tokenData.mapboxKey) throw new Error('Mapbox token not found in API response');
+        setMapboxToken(tokenData.mapboxKey);
+
+        // Geocode Destination Address
+        const geocodeParams = new URLSearchParams({
+          action: 'geocode',
+          address: destinationAddress,
+        });
+        const geocodeRes = await fetch(`/api/mapbox?${geocodeParams.toString()}`);
+        if (!geocodeRes.ok) {
+           const errorData = await geocodeRes.json().catch(() => ({})); // Try to parse error
+           throw new Error(errorData.error || `Failed to geocode destination address (${geocodeRes.status})`);
+        }
+        const geocodeData = await geocodeRes.json();
+
+        if (geocodeData.features && geocodeData.features.length > 0) {
+          const coords = geocodeData.features[0].coordinates;
+          const newCoords = { longitude: coords[0], latitude: coords[1] };
+          setEndLocationCoords(newCoords);
+          // Set viewport center after geocoding succeeds
+          setViewport(prev => ({
+              ...prev,
+              longitude: newCoords.longitude,
+              latitude: newCoords.latitude,
+              zoom: 12 // Zoom in after finding location
+          }));
+           // Fly map to the new destination
+           if (mapRef.current?.getMap()) {
+               mapRef.current.getMap().flyTo({ center: [newCoords.longitude, newCoords.latitude], zoom: 12, duration: 1000 });
+           }
+           setShowEndPopup(true); // Show destination popup initially
+        } else {
+          throw new Error(`Could not find coordinates for: ${destinationAddress}`);
+        }
+      } catch (err: any) {
+        console.error('Initialization error:', err);
+        setInitError(err.message || 'Failed to initialize map data.');
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    if (destinationAddress) {
+      initializeMapData();
+    } else {
+       // Handle case where destinationAddress is not provided initially
+       setIsInitializing(false);
+       setInitError("Destination address is required.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destinationAddress]); // Rerun when destinationAddress changes
 
   // Helper to format duration (seconds to minutes/hours)
   const formatDuration = (durationSeconds: number): string => {
@@ -192,38 +253,64 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationN
    };
 
 
+  // Render Loading/Error states or the Map
+  if (isInitializing) {
+    return <div className="flex justify-center items-center h-full">Loading Map...</div>;
+  }
+
+  if (initError) {
+    return <div className="flex flex-col justify-center items-center h-full p-4 text-red-600">
+        <p>Error initializing map:</p>
+        <p className="mt-2 text-sm">{initError}</p>
+        <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-300 rounded">Close</button>
+      </div>;
+  }
+
+  if (!mapboxToken || !endLocationCoords) {
+     return <div className="flex justify-center items-center h-full text-red-600">Map data unavailable.</div>;
+  }
+
+  // Render the map once initialization is complete and successful
   return (
     <div style={{ height: '100%', width: '100%', position: 'relative', border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden' }}>
       <Map
-        ref={mapRef} // Assign ref here
-        initialViewState={viewport} // Use initialViewState for uncontrolled map
-        mapboxAccessToken={mapboxToken}
-        mapStyle="mapbox://styles/mapbox/streets-v11" // Or your preferred map style
-        // Remove onMove if using initialViewState for uncontrolled behavior
-        // onMove={evt => setViewport(evt.viewState)}
+        ref={mapRef}
+        // Use viewport for controlled map state if needed, or initialViewState for uncontrolled
+        // For flying, controlled might be better. Let's keep viewport controlled for now.
+        longitude={viewport.longitude}
+        latitude={viewport.latitude}
+        zoom={viewport.zoom}
+        pitch={viewport.pitch}
+        bearing={viewport.bearing}
+        onMove={evt => setViewport(evt.viewState)} // Update viewport state on move
+        mapboxAccessToken={mapboxToken} // Use fetched token
+        mapStyle="mapbox://styles/mapbox/streets-v11"
         style={{ width: '100%', height: '100%' }}
       >
         <NavigationControl position="top-right" />
         <GeolocateControl position="top-right" />
 
-        {/* End Location Marker */}
-        <Marker longitude={endLocation.longitude} latitude={endLocation.latitude} anchor="bottom">
-           <button onClick={() => setShowEndPopup(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-             {/* Use a distinct icon for destination */}
-             <svg height="25" viewBox="0 0 24 24" fill="#D83B01" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        {/* End Location Marker (use endLocationCoords) */}
+        {endLocationCoords && (
+          <Marker longitude={endLocationCoords.longitude} latitude={endLocationCoords.latitude} anchor="bottom">
+             <button onClick={() => setShowEndPopup(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+               {/* Use a distinct icon for destination */}
+               <svg height="25" viewBox="0 0 24 24" fill="#D83B01" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
            </button>
         </Marker>
-        {showEndPopup && (
+        )}
+        {/* End Location Popup (use endLocationCoords and destinationName) */}
+        {endLocationCoords && showEndPopup && (
           <Popup
-            longitude={endLocation.longitude}
-            latitude={endLocation.latitude}
+            longitude={endLocationCoords.longitude}
+            latitude={endLocationCoords.latitude}
             anchor="top"
             onClose={() => setShowEndPopup(false)}
-            closeOnClick={false} // Keep open until explicitly closed
-            offset={25} // Offset popup from marker center
+            closeOnClick={false}
+            offset={25}
           >
             <div>
-              <strong>Destination:</strong><br/> {endLocationName}
+              <strong>Destination:</strong><br/> {destinationName}
             </div>
           </Popup>
         )}
@@ -278,7 +365,7 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationN
                  </svg>
                </button>
                <h4 className="text-lg font-semibold text-gray-800">
-                   Directions to {endLocationName}
+                   Directions to {destinationName}
                </h4>
             </div>
             {/* Close Button (for the whole modal) */}
@@ -321,26 +408,27 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ endLocation, endLocationN
               </select>
             </div>
             {/* Get Route Button */}
+            {/* Disable button if route is loading, no start input, or destination coords missing */}
             <button
               onClick={getDirections}
-              disabled={isLoading || !startLocationInput} // Disable if no input
+              disabled={isLoadingRoute || !startLocationInput || !endLocationCoords}
               className="w-full px-4 py-2 text-white font-semibold rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
              >
-              {isLoading ? (
+              {isLoadingRoute ? (
                 <div className="flex justify-center items-center">
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Loading...
+                  Loading Route...
                 </div>
               ) : 'Get Route'}
             </button>
             {/* Error Message */}
-            {error && <p className="mt-3 text-sm text-red-600">Error: {error}</p>}
+            {routeError && <p className="mt-3 text-sm text-red-600">Error: {routeError}</p>}
 
             {/* Display Route Info */}
-            {route && !isLoading && (
+            {route && !isLoadingRoute && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <strong className="block mb-1 text-sm font-medium text-gray-700">Route Details:</strong>
                 <p className="text-sm text-gray-600">Distance: {formatDistance(route.distance)}</p>
