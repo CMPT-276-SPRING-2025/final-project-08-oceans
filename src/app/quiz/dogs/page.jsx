@@ -22,7 +22,7 @@ const dogQuestions = [
       options: [
         { label: "A small apartment", value: "small" },
         { label: "A house with a yard", value: "medium" },
-        { label: "A large property or farm", value: "xlarge" },
+        { label: "A large property or farm", value: "large,xlarge" },
       ],
       image: assets.dog,
       multiple: false, 

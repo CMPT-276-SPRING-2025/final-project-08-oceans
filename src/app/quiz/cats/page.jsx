@@ -45,7 +45,7 @@ const catQuestions = [
       { label: "Yes, I have kids", value: "good_with_children" },
       { label: "Yes, I have dogs", value: "good_with_dogs" },
       { label: "Yes, I have other cats", value: "good_with_cats" },
-      { label: "No, it’s just me", value: "none" },
+      { label: "No, it’s just me", value: "no_pets" },
     ],
     image: assets.cat,
     multiple: true,

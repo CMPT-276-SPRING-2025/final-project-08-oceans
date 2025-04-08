@@ -10,7 +10,7 @@ const genericQuestions = [
     options: [
       { label: "A small cage or tank", value: "small" },
       { label: "A medium-sized enclosure", value: "medium" },
-      { label: "A large enclosure or free-roaming setup", value: "large" },
+      { label: "A large enclosure or free-roaming setup", value: "large,xlarge" },
     ],
     image: assets.bird,
     multiple: false,
@@ -25,7 +25,7 @@ const genericQuestions = [
     ],
     image: assets.bird,
     multiple: false,
-    apiKey: "breed",
+    apiKey: "breed-interact",
   },
   {
     question: "What level of care are you comfortable with?",
@@ -46,7 +46,7 @@ const genericQuestions = [
       { label: "10+ years", value: "long-lifespan" },
     ],
     image: assets.bird,
-    multiple: true,
+    multiple: false,
     apiKey: "age",
   },
   {
@@ -55,7 +55,7 @@ const genericQuestions = [
       { label: "Yes, young kids", value: "good_with_children" },
       { label: "Yes, dogs", value: "good_with_dogs" },
       { label: "Yes, cats", value: "good_with_cats" },
-      { label: "No, just me", value: "no_other_pets" },
+      { label: "No, just me", value: "no_pets" },
     ],
     image: assets.bird,
     multiple: true,

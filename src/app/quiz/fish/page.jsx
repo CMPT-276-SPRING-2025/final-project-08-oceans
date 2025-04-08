@@ -13,7 +13,7 @@ const genericQuestions = [
       { label: "A large enclosure or free-roaming setup", value: "large" },
     ],
     image: assets.fish,
-    multiple: true,
+    multiple: false,
     apiKey: "size",
   },
   {
@@ -25,7 +25,7 @@ const genericQuestions = [
     ],
     image: assets.fish,
     multiple: false,
-    apiKey: "breed",
+    apiKey: "breed-interact",
   },
   {
     question: "What level of care are you comfortable with?",
@@ -35,7 +35,7 @@ const genericQuestions = [
       { label: "I’m ready for a high-maintenance pet that needs a lot of attention", value: "high" },
     ],
     image: assets.fish,
-    multiple: true,
+    multiple: false,
     apiKey: "breed",
   },
   {
@@ -46,7 +46,7 @@ const genericQuestions = [
       { label: "10+ years", value: "long-lifespan" },
     ],
     image: assets.fish,
-    multiple: true,
+    multiple: false,
     apiKey: "age",
   },
   {
@@ -55,7 +55,7 @@ const genericQuestions = [
       { label: "Yes, young kids", value: "good_with_children" },
       { label: "Yes, dogs", value: "good_with_dogs" },
       { label: "Yes, cats", value: "good_with_cats" },
-      { label: "No, just me", value: "no_other_pets" },
+      { label: "No, just me", value: "no_pets" },
     ],
     image: assets.fish,
     multiple: true,

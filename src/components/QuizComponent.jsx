@@ -9,7 +9,7 @@ import energyDogBreeds from '@/app/pets/Quiz_Breed_questions/Energy Dog breeds.j
 import hypoallergenicDogBreeds from '@/app/pets/Quiz_Breed_questions/Hypoellergenic-Dog-breeds.json';
 import energyCatBreeds from '@/app/pets/Quiz_Breed_questions/Energy-Cat-breeds.json';
 import dependenceCatBreeds from '@/app/pets/Quiz_Breed_questions/Dependence-Cat-breeds.json';
-import breedMappings from '@/app/pets/Quiz_Breed_questions/Bird-Small-Fish-Reptile-Breeds.json';
+import ageRangeBreeds from '@/app/pets/Quiz_Breed_questions/ageRangeBreeds.json';
 import careLevelMappings from '@/app/pets/Quiz_Breed_questions/care-Level-Generic.json';
 import interactionMappings from '@/app/pets/Quiz_Breed_questions/Interaction-Level-Generic.json';
 import hypoallergenicCatBreeds from '@/app/pets/Quiz_Breed_questions/Hypoallergenic-Cat-breeds.json';
@@ -69,6 +69,7 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
 
     let careSet = new Set();
     let interactionSet = new Set();
+    let ageSet = new Set();
 
     //If the question is a standard field, it handles the query accordingly
     const handleStandardField = (q, key, answer) => {
@@ -144,21 +145,31 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
           'small_furry_rabbit_breeds';
 
         if (key === 'breed') {
-          const careOptions = careLevelMappings.care_level?.[category];
-          const interactionOptions = interactionMappings.interaction_level?.[category];
+          if (answer === 'low') careLevelMappings.care_level?.[category]?.low?.forEach(b => careSet.add(b));
+          else if (answer === 'medium') careLevelMappings.care_level?.[category]?.medium?.forEach(b => careSet.add(b));
+          else if (answer === 'high') careLevelMappings.care_level?.[category]?.high?.forEach(b => careSet.add(b));
+        } 
+        else if (key === 'breed-interact') {
+          if (answer === 'interactive') interactionMappings.interaction_level?.[category]?.interactive?.forEach(b => interactionSet.add(b));
+          else if (answer === 'middle_ground') interactionMappings.interaction_level?.[category]?.middle_ground?.forEach(b => interactionSet.add(b));
+          else if (answer === 'observational') interactionMappings.interaction_level?.[category]?.observational?.forEach(b => interactionSet.add(b));
+        }
+        else if (key === 'age'){
+          if (answer === 'short-lifespan') ageRangeBreeds.lifespan_categories?.short_lifespan?.[type]?.forEach(b => ageSet.add(b));
+          else if (answer === 'medium-lifespan') ageRangeBreeds.lifespan_categories?.medium_lifespan?.[type]?.forEach(b => ageSet.add(b));
+          else if (answer === 'long-lifespan') ageRangeBreeds.lifespan_categories?.long_lifespan?.[type]?.forEach(b => ageSet.add(b));
+        } 
+        else if (key === 'tags') {
+            const tagValues = Array.isArray(answer) ? answer : [answer]; // Ensure array
 
-          // If the answer is a specific breed, add it to the set
-          if (careOptions) {
-            Object.values(careOptions).forEach(list => {
-              list?.forEach(b => careSet.add(b));
+            if (tagValues.includes("no_pets")){} // Add nothing
+            tagValues.forEach(tagValue => {
+                // Check if it's one of the specific Petfinder boolean flags
+                if (['good_with_children', 'good_with_dogs', 'good_with_cats'].includes(tagValue)) {
+                    // Use the tag value itself as the query key, set value to true
+                    query[tagValue] = true; // Petfinder uses boolean flags
+                }
             });
-          }
-
-          if (interactionOptions) {
-            Object.values(interactionOptions).forEach(list => {
-              list?.forEach(b => interactionSet.add(b));
-            });
-          }
         } else {
           handleStandardField(q, key, answer);
         }
@@ -194,9 +205,26 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
         }
       }
     } else if (['bird', 'fish', 'reptile', 'small-pets'].includes(type)) {
-      for (const breed of careSet) {
-        if (interactionSet.has(breed)) {
-          breedSet.add(breed);
+      // Find the intersection of careSet, interactionSet, and ageSet
+      if (ageSet.size > 0) {
+        for (const breed of careSet) {
+          if (interactionSet.has(breed) && ageSet.has(breed)) {
+            breedSet.add(breed);
+          }
+        }
+        if (!breedSet.size > 0) {
+          for (const breed of careSet) {
+            if (interactionSet.has(breed)) {
+              breedSet.add(breed);
+            }
+          }
+        }
+      }
+      else {
+        for (const breed of careSet) {
+          if (interactionSet.has(breed)) {
+            breedSet.add(breed);
+          }
         }
       }
     }
