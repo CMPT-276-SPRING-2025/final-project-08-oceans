@@ -4,6 +4,11 @@ import React, { useState, useEffect } from "react"
 import { Progress } from "./progress"
 import { createPortal } from "react-dom"
 
+/**
+ * @component LoadingBar => returns a loading bar component that displays a loading message and progress.
+ * outputs a loading bar with a message and progress percentage.
+ * 
+ */
 const LoadingBar = ({
   isLoading = false,
   showOverlay = true,
@@ -15,16 +20,19 @@ const LoadingBar = ({
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [mounted, setMounted] = useState(false)
 
+  // This effect is used to set the mounted state to true when the component mounts and false when it unmounts.
   useEffect(() => {
     setMounted(true)
     return () => setMounted(false)
   }, [])
 
+  // This effect is used to update the loading progress and call the onComplete function when the loading is complete.
   useEffect(() => {
     let timer
     if (isLoading) {
       setLoadingProgress(0)
       
+      // If progress is provided, use it to set the loading progress
       if (progress !== null) {
         setLoadingProgress(progress)
         if (progress >= 100) {
@@ -36,6 +44,7 @@ const LoadingBar = ({
       const interval = 100
       const increment = (100 * interval) / loadingTime
       
+      // If no progress is provided, set the loading progress to 0 and start the timer
       timer = setInterval(() => {
         setLoadingProgress(prev => {
           if (prev >= 99) {
@@ -87,11 +96,17 @@ const LoadingBar = ({
   return mounted ? createPortal(content, document.body) : null
 }
 
+/**
+ * 
+ * @param {*} WrappedComponent => The component to be wrapped with the loading bar.
+ * @returns {JSX.Element} A component that wraps the provided component with a loading bar.
+ */
 export const withLoading = (WrappedComponent) => {
   return (props) => {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState("Loading...")
     
+    // This function starts the loading process and sets a custom message if provided.
     const startLoading = (customMessage) => {
       if (customMessage) setMessage(customMessage)
       setLoading(true)
@@ -121,6 +136,10 @@ export const withLoading = (WrappedComponent) => {
   }
 }
 
+/**
+ * useLoading => A custom hook that provides loading state and functions to control the loading bar.
+ * @returns {Object} An object containing the loading state, startLoading function, stopLoading function, and LoadingBarComponent.
+ */
 export const useLoading = () => {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("Loading...")

@@ -5,6 +5,8 @@ import { saveToSessionStorage, getFromSessionStorage } from '@/lib/clientStorage
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
+// This type represents the structure of a shelter object.
+// It includes properties such as id, name, location, contact information, and optional fields for photos and coordinates.
 type Shelter = {
   id: string;
   name: string;
@@ -28,6 +30,12 @@ type ShelterMapProps = {
   onShelterSelect?: (shelterId: string) => void;
 };
 
+/**
+ * 
+ * @param shelters - An array of shelter objects to be displayed on the map.
+ * @param onShelterSelect - A callback function to be called when a shelter is selected.
+ * @returns {JSX.Element} A JSX element representing the shelter map.
+ */
 const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -175,6 +183,7 @@ const ShelterMap: React.FC<ShelterMapProps> = ({ shelters, onShelterSelect }) =>
           throw new Error('Failed to geocode shelter addresses');
         }
 
+        // Mapbox geocode results are returned in the same order as the input addresses
         const geocodedShelters = shelters.map((shelter, index) => {
           const geocodeResult = data.results[index];
           const feature = geocodeResult?.features?.[0];

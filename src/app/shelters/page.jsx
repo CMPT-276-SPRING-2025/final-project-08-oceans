@@ -10,6 +10,9 @@ import { useRouter } from 'next/navigation';
 import ShelterMap from '@/components/map/ShelterMap';
 import { LocationSearchInput } from "@/components/ui/locationSeachInput";
 
+/**
+ * @returns Shelters component that displays a list of pet shelters and allows users to search for shelters by location or name.
+ */
 const Shelters = () => {
   const router = useRouter();
   const [shelters, setShelters] = useState([]);
@@ -94,6 +97,7 @@ const Shelters = () => {
     fetchShelters();
   }, []);
 
+  // Handle search by location or name
   const handleSearch = async () => {
     setLoading(true);
     setLoadingMessage("Searching shelters...");
@@ -147,6 +151,7 @@ const Shelters = () => {
     }
   };
 
+  // Handle view shelter details
   const handleViewShelter = (shelterId) => {
     setIsNavigating(true);
     setLoadingMessage("Loading shelter details...");
@@ -165,7 +170,7 @@ const Shelters = () => {
     }, 600);
   };
 
-      
+  // Handle shelter selection on the map    
   const handleShelterSelect = useCallback((shelterId) => {
     setSelectedShelterId(shelterId); 
 

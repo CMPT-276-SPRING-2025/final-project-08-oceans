@@ -10,6 +10,12 @@ import { LoadingBar } from '@/components/ui/loading-bar';
 import { Button } from '@/components/ui/button';
 import { decode } from 'punycode';
 
+/**
+ * Fetches pet details based on parameters provided.
+ * @param {*} params - The parameters object containing the pet ID and search parameters.
+ * @param {string} searchParams - The ID of the pet to fetch details for.
+ * @returns {JSX.Element} The rendered pet detail page component.
+ */
 export default function PetDetailPage({ params, searchParams }) {
   const { id } = use(params);
   const [pet, setPet] = useState(null);
@@ -19,6 +25,7 @@ export default function PetDetailPage({ params, searchParams }) {
   const router = useRouter();
   const searchParamsValue = use(searchParams);
 
+  // Functions to handle image navigation
   const nextImage = () => {
     if (pet?.photos?.length > 1) {  
       setCurrentImageIndex((prevIndex) => 

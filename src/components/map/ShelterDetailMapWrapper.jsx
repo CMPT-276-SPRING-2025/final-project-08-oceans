@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 
-// Import the map component with no SSR since it uses browser APIs
+// Import the map component with no SSR
 const ShelterDetailMap = dynamic(
   () => import('./ShelterDetailMap'),
   { ssr: false }

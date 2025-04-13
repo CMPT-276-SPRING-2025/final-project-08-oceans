@@ -6,11 +6,11 @@ const GEOCODING_ENDPOINT = '/geocoding/v5/mapbox.places';
 const DIRECTIONS_ENDPOINT = '/directions/v5/mapbox';
 const STATIC_IMAGE_ENDPOINT = '/styles/v1/mapbox/streets-v11/static';
 
-
+// Types for navigation profiles
 const NAVIGATION_PROFILES = {
-  driving: 'driving', // Removed 'mapbox/' prefix
-  walking: 'walking', // Removed 'mapbox/' prefix
-  cycling: 'cycling', // Removed 'mapbox/' prefix
+  driving: 'driving', 
+  walking: 'walking', 
+  cycling: 'cycling', 
 };
 
 type GeocodeRequest = {
@@ -24,10 +24,16 @@ type NavigationRequest = {
   waypoints?: string[];
 };
 
+/**
+ * Handles various actions related to Mapbox API requests, including geocoding, navigation, and static map generation.
+ * @param request - The request object containing the HTTP request information.
+ * @returns {Promise<NextResponse>} A promise that resolves to the NextResponse object containing the result of the action.
+ */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action');
 
+  //If key is not configured, return error
   if (!process.env.MAPBOX_KEY) {
     return NextResponse.json(
       { error: 'Mapbox API key is not configured' },
@@ -35,7 +41,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Tries to handle the request based on the action specified in the query parameters.
   try {
+
     switch (action) {
       case 'geocode': {
         const address = searchParams.get('address');
@@ -46,6 +54,7 @@ export async function GET(request: NextRequest) {
           );
         }
         
+        // Check if the address is already cached
         const cachedResult = mapboxCache.get(`geocode:${address}`);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
@@ -56,11 +65,13 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(result);
       }
       
+      // Handle navigation requests
+      // Requires origin address and either destination address or coordinates
       case 'navigation': {
-        const origin = searchParams.get('origin'); // String address
-        const destination = searchParams.get('destination'); // String address (might be null if coords provided)
-        const destinationCoordsParam = searchParams.get('destinationCoords'); // Optional coords string "lng,lat"
-        const destinationName = searchParams.get('destinationName'); // Optional name if coords provided
+        const origin = searchParams.get('origin'); 
+        const destination = searchParams.get('destination'); 
+        const destinationCoordsParam = searchParams.get('destinationCoords');
+        const destinationName = searchParams.get('destinationName'); 
         const mode = searchParams.get('mode') as 'driving' | 'walking' | 'cycling' || 'driving';
         
         // Require origin address AND (destination address OR destination coordinates)
@@ -81,18 +92,23 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(cachedResult);
         }
         
+        // result of getting directions
         const result = await getDirections(
           origin,
-          destination, // Pass original destination address/name if available
+          destination, 
           mode,
           waypoints,
-          undefined, // No origin coords provided
-          destinationCoordsParam, // Pass destination coords string if available
-          destinationName // Pass destination name if available
+          undefined, 
+          destinationCoordsParam,
+          destinationName 
         );
+        // Cache the result using the destinationIdentifier
         mapboxCache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
         return NextResponse.json(result);
       }
+
+      // Generates the static map URL based on the provided longitude, latitude, zoom level, and other parameters.
+      // Returns a JSON response with the generated static map URL.
       case 'staticmap': {
         const lonStr = searchParams.get('lon');
         const latStr = searchParams.get('lat');
@@ -152,6 +168,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Fetches data from the Mapbox API based on the provided action.
+ * @param request - The request object containing the HTTP request information.
+ * @returns {Promise<NextResponse>} A promise that resolves to the NextResponse object containing the result of the action.
+ */
 export async function POST(request: NextRequest) {
   if (!process.env.MAPBOX_KEY) {
     return NextResponse.json(
@@ -202,6 +223,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ results });
       }
       
+      // Handle navigation requests
       case 'navigation': {
         const { origin, destination, mode = 'driving', waypoints = [] } = body as NavigationRequest;
         
@@ -238,6 +260,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * Geocodes the provided address.
+ * @param address - Address string to geocode
+ * @returns {Promise<{ query: string; features: any[] }>} The geocoding result containing the query and features.
+ */
 async function geocodeAddress(address: string) {
   const encodedAddress = encodeURIComponent(address);
   const url = `${MAPBOX_BASE_URL}${GEOCODING_ENDPOINT}/${encodedAddress}.json?access_token=${process.env.MAPBOX_KEY}`;
@@ -264,18 +291,22 @@ async function geocodeAddress(address: string) {
   };
 }
 
+/**
+ * Fetches directions from the Mapbox Directions API based on the provided parameters.
+ * @returns {Promise<any>} - The directions result containing route information.
+ */
 async function getDirections(
-  origin: string, // Address string
-  destination: string | null, // Address string (optional if coords provided)
+  origin: string, 
+  destination: string | null,
   mode: 'driving' | 'walking' | 'cycling' = 'driving',
   waypoints: string[] = [],
-  originCoordsParam?: string, // Optional "lng,lat" string
-  destinationCoordsParam?: string, // Optional "lng,lat" string
-  destinationName?: string | null // Optional name if coords provided
+  originCoordsParam?: string, 
+  destinationCoordsParam?: string, 
+  destinationName?: string | null
 ) {
   let originPoint: [number, number] | undefined;
   let destPoint: [number, number] | undefined;
-  let finalDestinationName = destinationName || destination; // Use provided name or fallback to address
+  let finalDestinationName = destinationName || destination; 
 
   // Geocode origin or parse coords
   if (originCoordsParam) {
@@ -294,27 +325,31 @@ async function getDirections(
   // Geocode destination or parse coords
   if (destinationCoordsParam) {
      const [lng, lat] = destinationCoordsParam.split(',').map(Number);
+
+     // Check if the coordinates are valid numbers
      if (!isNaN(lng) && !isNaN(lat)) {
        destPoint = [lng, lat];
      } else {
         throw new Error('Invalid destination coordinates format. Expected "longitude,latitude".');
      }
+  
+  // If destinationName is provided, use it as the final destination name
   } else if (destination) {
      const destinationGeocodeResult = await geocodeAddress(destination);
      destPoint = destinationGeocodeResult.features[0]?.coordinates;
      if (!destPoint) throw new Error(`Could not geocode destination address: ${destination}`);
   } else {
-     // This case should be prevented by the GET handler check, but added for safety
      throw new Error('Destination address or coordinates are required.');
   }
 
-  // Geocode waypoints (if any)
+  // Geocode waypoints 
   const waypointCoords = waypoints.length > 0
     ? await Promise.all(waypoints.map(wp => geocodeAddress(wp)))
     : [];
   
   let coordinatesStr = `${originPoint[0]},${originPoint[1]}`;
   
+  // For each waypoint, add its coordinates to the string
   for (const wp of waypointCoords) {
     const wpPoint = wp.features[0]?.coordinates;
     if (wpPoint) {
@@ -322,20 +357,20 @@ async function getDirections(
     }
   }
   
+  // Add the destination coordinates to the string
   coordinatesStr += `;${destPoint[0]},${destPoint[1]}`;
-  
   const profile = NAVIGATION_PROFILES[mode] || NAVIGATION_PROFILES.driving;
-  
   const url = `${MAPBOX_BASE_URL}${DIRECTIONS_ENDPOINT}/${profile}/${coordinatesStr}?alternatives=true&geometries=geojson&overview=full&steps=true&access_token=${process.env.MAPBOX_KEY}`;
   
   
   const response = await fetch(url);
   
+  // Check if the response is OK 
   if (!response.ok) {
     let errorBody = '';
-    let errorMessage = `Directions API Error: ${response.status}`; // Default message with status code
+    let errorMessage = `Directions API Error: ${response.status}`;
     try {
-      errorBody = await response.text(); // Try to get error body
+      errorBody = await response.text(); 
       const parsedBody = JSON.parse(errorBody);
       // Prioritize message from parsed body
       if (parsedBody.message) {

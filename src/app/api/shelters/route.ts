@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 export const dynamic = "force-dynamic" 
 export const revalidate = 0
 
+// type for Petfinder API authentication response
 type PetfinderAuthResponse = {
   token_type: string;
   expires_in: number;
   access_token: string;
 };
 
+// type to store organization address details
 type PetfinderOrganizationAddress = {
   address1: string | null;
   address2: string | null;
@@ -17,6 +19,7 @@ type PetfinderOrganizationAddress = {
   country: string | null;
 };
 
+// type to store organization hours details
 type PetfinderOrganizationHours = {
   monday: string | null;
   tuesday: string | null;
@@ -27,11 +30,13 @@ type PetfinderOrganizationHours = {
   sunday: string | null;
 };
 
+// type to store organization adoption details
 type PetfinderOrganizationAdoption = {
   policy: string | null;
   url: string | null;
 };
 
+// type to store organization social media details
 type PetfinderOrganizationSocialMedia = {
   facebook: string | null;
   twitter: string | null;
@@ -40,6 +45,7 @@ type PetfinderOrganizationSocialMedia = {
   pinterest: string | null;
 };
 
+// type to store organization details
 type PetfinderOrganization = {
   id: string;
   name: string;
@@ -69,6 +75,7 @@ type PetfinderOrganization = {
   };
 };
 
+// type to store the response from the Petfinder API for organizations
 type PetfinderOrganizationResponse = {
   organizations: PetfinderOrganization[];
   pagination: {
@@ -84,6 +91,7 @@ type PetfinderOrganizationResponse = {
   };
 };
 
+// Simplify the organization data for easier consumption
 type SimplifiedShelter = {
   id: string;
   name: string;
@@ -103,6 +111,10 @@ type SimplifiedShelter = {
   }>;
 };
 
+/**
+ * Fetches an access token for the Petfinder API.
+ * @returns {Promise<string>} - A promise that resolves to the access token string.
+ */
 async function getPetfinderToken(): Promise<string> {
   const response = await fetch('https://api.petfinder.com/v2/oauth2/token', {
     method: 'POST',
@@ -124,6 +136,11 @@ async function getPetfinderToken(): Promise<string> {
   return data.access_token;
 }
 
+/**
+ * Fetches a list of shelters based on query parameters.
+ * @param request - The request object containing the HTTP request information.
+ * @returns {Promise<NextResponse>} A promise that resolves to the NextResponse object containing shelter data or an error message.
+ */
 export async function GET(request: Request) {
   try {
     // Try to get a token for the Petfinder API
@@ -143,6 +160,7 @@ export async function GET(request: Request) {
       });
     }
 
+    // Parse the request URL to get query parameters
     const url = new URL(request.url);
     const { searchParams } = url;
     const location = searchParams.get('location') || undefined;
@@ -156,6 +174,7 @@ export async function GET(request: Request) {
     try {
       const queryParams = new URLSearchParams();
       
+      // If X is provided, add it to the query parameters
       if (location) {
         queryParams.append('location', location);
         queryParams.append('distance', '100');
@@ -173,11 +192,13 @@ export async function GET(request: Request) {
       }
 
       
+      // Fetch the shelters from the Petfinder API
       const response = await fetch(`https://api.petfinder.com/v2/organizations?${queryParams.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store'
       });
 
+      // Check if the response is ok
       if (!response.ok) {
         if (response.status === 400 || (!location && !name)) {
           return NextResponse.json({ 

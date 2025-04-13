@@ -11,6 +11,11 @@ function formatHours(hours) {
   return entries.length > 0 ? entries.join(', ') : 'Hours not available';
 }
 
+/**
+ * Fetches shelter data from the Petfinder API.
+ * @param {*} request - The incoming request object.
+ * @param {*} params - The route parameters, including the shelter ID.
+ */
 export async function GET(request, { params }) {
   const { id } = params;
   

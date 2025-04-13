@@ -27,7 +27,7 @@ describe('Mapbox API Route', () => {
   const originalMapboxKey = process.env.MAPBOX_KEY;
 
   beforeEach(() => {
-    jest.clearAllMocks(); // Clears fetch mocks
+    jest.clearAllMocks(); 
     // Restore any spies if they were created in tests
     jest.restoreAllMocks();
     // Clear the internal cache before each test
@@ -40,6 +40,7 @@ describe('Mapbox API Route', () => {
     process.env.MAPBOX_KEY = originalMapboxKey; // Restore original key
   });
 
+  // Mock the fetch function globally for all tests
   describe('GET Handler', () => {
     it('should return Mapbox key if no action specified', async () => {
       const request = { url: 'http://localhost/api/mapbox' } as NextRequest; // Simulate NextRequest

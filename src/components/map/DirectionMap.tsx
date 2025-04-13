@@ -46,11 +46,11 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
 
   const mapRef = useRef<MapRef | null>(null); // Use MapRef type
 
-  // Initial viewport - centered vaguely until coords are fetched
+  // Initial viewport - centered until coordinates are fetched
   const [viewport, setViewport] = useState({
-    longitude: -123.12, // Default to Vancouver area or similar
+    longitude: -123.12, 
     latitude: 49.28,
-    zoom: 9, // Start zoomed out
+    zoom: 9,
     pitch: 0,
     bearing: 0
   });
@@ -103,6 +103,7 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
 
       const response = await fetch(`/api/mapbox?${params.toString()}`);
 
+      // Check for response status
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -137,7 +138,7 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
           }
         } else {
            // Attempt to center map based on destination if start fails
-            if (mapRef.current?.getMap() && endLocationCoords) { // Check endLocationCoords too
+            if (mapRef.current?.getMap() && endLocationCoords) {
                 mapRef.current.getMap().flyTo({ center: [endLocationCoords.longitude, endLocationCoords.latitude], zoom: 13 });
             }
         }
@@ -177,17 +178,21 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
         if (!tokenData.mapboxKey) throw new Error('Mapbox token not found in API response');
         setMapboxToken(tokenData.mapboxKey);
 
+        // Geocode the destination address
         const geocodeParams = new URLSearchParams({
           action: 'geocode',
           address: destinationAddress,
         });
         const geocodeRes = await fetch(`/api/mapbox?${geocodeParams.toString()}`);
+
+        // Check for geocode response status
         if (!geocodeRes.ok) {
-           const errorData = await geocodeRes.json().catch(() => ({})); // Try to parse error
+           const errorData = await geocodeRes.json().catch(() => ({}));
            throw new Error(errorData.error || `Failed to geocode destination address (${geocodeRes.status})`);
         }
         const geocodeData = await geocodeRes.json();
 
+        // Check if geocode data is valid
         if (geocodeData.features && geocodeData.features.length > 0) {
           const coords = geocodeData.features[0].coordinates;
           const newCoords = { longitude: coords[0], latitude: coords[1] };
@@ -365,7 +370,7 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({ destinationAddress, desti
 
         {/* Collapsible Content */}
         {!isPanelCollapsed && (
-          <> {/* Use Fragment */}
+          <>
             {/* Start Location Input */}
             <div className="mb-3">
               <label htmlFor="startLocation" className="block mb-1 text-sm font-medium text-gray-700">Start Location:</label>

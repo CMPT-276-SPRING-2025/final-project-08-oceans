@@ -4,6 +4,10 @@ import React from 'react';
 import QuizComponent from '@/components/QuizComponent';
 import { assets } from '@/assets/assets';
 
+/**
+ * @component QuizSmallPets => returns a quiz component for small pets.
+ * This component is used to display a quiz for small pets.
+ */
 const genericQuestions = [
   {
     question: "How much space can you dedicate to your pet's enclosure?",
@@ -63,6 +67,7 @@ const genericQuestions = [
   },
 ];
 
+/// QuizSmallPets component that renders the quiz for small pets
 const QuizSmallPets = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-orange-50 p-6">

@@ -2,11 +2,19 @@
 
 import React from 'react';
 
+// This component represents a marker for a shelter on a map.
 type ShelterMarkerProps = {
   name: string;
   selected?: boolean;
   onClick?: () => void;
 };
+
+/** 
+ * @param name - The name of the shelter.
+ * @param selected - Indicates if the marker is selected or not.
+ * @param onClick - Function to call when the marker is clicked.
+ * @returns {JSX.Element} A JSX element representing the shelter marker.
+ */
 
 const ShelterMarker: React.FC<ShelterMarkerProps> = ({ name, selected = false, onClick }) => {
   return (

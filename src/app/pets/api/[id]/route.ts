@@ -4,7 +4,12 @@ import { NextResponse } from 'next/server';
 export const dynamic = "auto";
 export const revalidate = 3600;
 
-
+/**
+ * Fetches detailed information about a pet based on its ID.
+ * @param request - The request object containing the HTTP request information.
+ * @param params - The parameters extracted from the request URL.
+ * @returns {Promise<NextResponse>} A promise that resolves to the NextResponse object containing pet details or an error message.
+ */
 export async function GET(
     request: Request, { params }
 ) {

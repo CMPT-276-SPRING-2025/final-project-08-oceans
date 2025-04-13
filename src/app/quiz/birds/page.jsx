@@ -4,6 +4,9 @@ import React from 'react';
 import QuizComponent from '@/components/QuizComponent';
 import { assets } from '@/assets/assets';
 
+/**
+ * * @component QuizBirds => returns a quiz component for birds.
+ */
 const genericQuestions = [
   {
     question: "How much space can you dedicate to your pet's enclosure?",

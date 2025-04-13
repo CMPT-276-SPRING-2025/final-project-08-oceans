@@ -5,7 +5,7 @@ import Link from 'next/link';
 import ShelterDetailMapWrapper from '@/components/map/ShelterDetailMapWrapper';
 import ShelterClientDetails from '@/components/ShelterClientDetails'; 
 
-
+/// Fetch shelter details from Petfinder API using the provided ID
 async function getShelter(id) {
   try {
     const tokenRes = await fetch('https://api.petfinder.com/v2/oauth2/token', {
@@ -55,6 +55,7 @@ async function getShelter(id) {
   }
 }
 
+/// Main component to display shelter details
 export default async function ShelterDetail({ params, searchParams }) {
   // Extract the ID value before passing to client components
   const { id } = await params; 

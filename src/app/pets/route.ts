@@ -3,12 +3,14 @@ import breeds from './Quiz_Breed_questions/Bird-Small-Fish-Reptile-Breeds.json';
 export const dynamic = "auto"
 export const revalidate = 3600 // Revalidate data every hour
 
+// type for Petfinder API authentication response
 type PetfinderAuthResponse = {
   token_type: string;
   expires_in: number;
   access_token: string;
 };
 
+// type for Petfinder API pet data
 type PetfinderPet = {
   id: number;
   type: {
@@ -33,6 +35,7 @@ type PetfinderPet = {
   distance?: number;
 };
 
+// type for Petfinder API response
 type PetfinderResponse = {
   animals: PetfinderPet[];
   pagination: {
@@ -43,6 +46,7 @@ type PetfinderResponse = {
   };
 };
 
+// type for simplified pet data to be returned in the API response
 type SimplifiedPet = {
   id: number;
   type: string;
@@ -59,6 +63,10 @@ type SimplifiedPet = {
   }>;
 };
 
+/**
+ * @component getPetfinderToken => Fetches the access token from the Petfinder API.
+ * @returns {Promise<string>} - Returns a promise that resolves to the access token string.
+ */
 async function getPetfinderToken(): Promise<string> {
   const response = await fetch('https://api.petfinder.com/v2/oauth2/token', {
     method: 'POST',
@@ -82,6 +90,11 @@ async function getPetfinderToken(): Promise<string> {
   return data.access_token;
 }
 
+/**
+ * @param request - The incoming request object.
+ * @param cacheKey - The cache key for the request.
+ * @returns {Promise<NextResponse>} - Returns a promise that resolves to the NextResponse object.
+ */
 export async function GET(request: Request) {
   // Cache URL for potential future use
   const cacheKey = request.url;
@@ -133,18 +146,21 @@ export async function GET(request: Request) {
           // Join all breeds into a single string
           const allBreeds = breedList.join(',');
 
+          // Fetch pets with the specified breed
           const queryParams = new URLSearchParams();
           queryParams.append('type', type);
-          queryParams.append('breed', allBreeds); // Append all breeds
+          queryParams.append('breed', allBreeds); 
           if (age) queryParams.append('age', age);
           queryParams.append('page', page);
           queryParams.append('limit', limit);
 
+          // Add location if provided
           if (location){
             queryParams.append('location', location);
             queryParams.append('sort', 'distance');
           }
 
+          // Fetches animals from the Petfinder API
           const response = await fetch(`https://api.petfinder.com/v2/animals?${queryParams.toString()}`, {
               headers: { Authorization: `Bearer ${token}` },
               next: { revalidate: 3600 }
@@ -192,7 +208,7 @@ export async function GET(request: Request) {
         if (breed) queryParamsRabbit.append('breed', breed);
         if (age) queryParamsRabbit.append('age', age);
         queryParamsRabbit.append('page', page);
-        queryParamsRabbit.append('limit', String(Math.ceil(Number(limit) / 2))); // Use remaining half of limit
+        queryParamsRabbit.append('limit', String(Math.ceil(Number(limit) / 2))); 
         if (location){
           queryParamsRabbit.append('location', location);
           queryParamsRabbit.append('sort', 'distance');
@@ -280,10 +296,10 @@ export async function GET(request: Request) {
           queryParams.append('sort', 'distance');
         }
 
-        
+      
         const response = await fetch(`https://api.petfinder.com/v2/animals?${queryParams.toString()}`, {
           headers: { Authorization: `Bearer ${token}` },
-          next: { revalidate: 3600 } // Cache for an hour
+          next: { revalidate: 3600 } 
         });
 
         if (!response.ok) {

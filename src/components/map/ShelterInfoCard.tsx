@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { LoadingBar } from '@/components/ui/loading-bar';
 
+
+//ShelterInfoCard component displays information about a shelter.
 type ShelterInfoCardProps = {
   id: string;
   name: string;
@@ -39,9 +41,9 @@ const ShelterInfoCard: React.FC<ShelterInfoCardProps> = ({
           </svg>
         </button>
 
-        {/* Content - Adjust margins/padding as needed */}
-        <div className="pt-1"> {/* Add padding top */}
-          <h3 className="text-lg font-semibold text-gray-800 leading-tight mb-1 pr-6">{name}</h3> {/* Add padding-right to avoid overlap */}
+        {/* Content*/}
+        <div className="pt-1"> 
+          <h3 className="text-lg font-semibold text-gray-800 leading-tight mb-1 pr-6">{name}</h3> 
           <p className="text-sm text-gray-600 mb-3">{address}</p>
 
           <div className="flex justify-end mt-3">
@@ -59,9 +61,9 @@ const ShelterInfoCard: React.FC<ShelterInfoCardProps> = ({
               </Link>
             )}
           </div>
-        </div> {/* Closing tag for content div */}
-      </div> {/* Closing tag for relative container */}
-    </div> // Closing tag for main div
+        </div>
+      </div>
+    </div>
   );
 };
 

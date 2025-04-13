@@ -4,6 +4,9 @@ import React from 'react';
 import QuizComponent from '@/components/QuizComponent';
 import { assets } from '@/assets/assets';
 
+/**
+ * @component QuizRandom => returns a quiz component for random pets.
+ */
 const randomQuestions = [
   {
     question: "How much time can you spend interacting with your pet daily?",

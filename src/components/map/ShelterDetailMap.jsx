@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react';
 import { saveToSessionStorage, getFromSessionStorage } from '@/lib/clientStorage';
 
+/**
+ * ShelterDetailMap component displays a static map of the shelter's location using Mapbox API.
+ * @param {*} shelter - The shelter object containing the location to be geocoded.
+ * @returns {JSX.Element} A component that displays a static map of the shelter's location.
+ */
 export default function ShelterDetailMap({ shelter }) {
   const [mapboxKey, setMapboxKey] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -111,6 +116,7 @@ export default function ShelterDetailMap({ shelter }) {
         const apiUrl = `/api/mapbox?action=staticmap&lon=${lon}&lat=${lat}`;
 
         const response = await fetch(apiUrl);
+        // Check if the response is ok 
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || `Failed to fetch static map URL: ${response.statusText}`);
@@ -118,6 +124,7 @@ export default function ShelterDetailMap({ shelter }) {
 
         const data = await response.json();
 
+        // Check if the static map URL is present in the response
         if (data.staticMapURL) {
           setStaticMapUrl(data.staticMapURL);
         } else {
@@ -132,6 +139,7 @@ export default function ShelterDetailMap({ shelter }) {
       }
     };
 
+    // Check if we have the coordinates and mapboxKey before fetching the static map
      if (coordinates && mapboxKey) {
         fetchStaticMap();
      }

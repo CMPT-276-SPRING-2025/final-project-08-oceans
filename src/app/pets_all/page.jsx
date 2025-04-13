@@ -8,6 +8,10 @@ import FilterButtons from '../../components/FilterButtons'
 import { saveToSessionStorage, getFromSessionStorage, generateCacheKey } from '../../lib/clientStorage'
 import { LoadingBar } from '@/components/ui/loading-bar'
 
+/**
+ * @component AllPetsPageClient => A component that displays a list of pets available for adoption based on user-selected filters and location.
+ * @returns {JSX.Element} A component that displays a list of pets available for adoption based on user-selected filters and location.
+ */
 const AllPetsPageClient = () => {
   // State for managing pets data, loading state, and error messages
   const [pets, setPets] = useState([])

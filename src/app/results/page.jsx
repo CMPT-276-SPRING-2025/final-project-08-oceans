@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { LocationSearchInput } from '@/components/ui/locationSeachInput';
 import { LoadingBar } from '@/components/ui/loading-bar'; 
+
+/// This component displays a list of pets available for adoption based on user-selected filters and location.
 const ResultsPage = () => {
   const [pets, setPets] = useState([]);
   const [fallbackMessage, setFallbackMessage] = useState('');
@@ -53,6 +55,7 @@ const ResultsPage = () => {
     setLoading(false);
   }, []);
 
+  // Function to handle location search and fetch pets based on filters
   const handleLocationSearch = async () => {
     const petType = localStorage.getItem('petType');
     const petSubType = localStorage.getItem('petSubType');

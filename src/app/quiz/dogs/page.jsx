@@ -4,6 +4,9 @@ import React from 'react';
 import QuizComponent from '@/components/QuizComponent';
 import { assets } from '@/assets/assets';
 
+/**
+ * * @component QuizDogs => returns a quiz component for dogs.
+ */
 const dogQuestions = [
     {
       question: "What age range are you looking for in a dog?",

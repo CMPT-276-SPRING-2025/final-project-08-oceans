@@ -15,6 +15,10 @@ const pets = [
   { name: 'or.....Let us decide!', image: assets.general_quiz, path: '/quiz/random' },
 ];
 
+/**
+ * Quiz component that displays a list of pets to choose from for a quiz.
+ * @returns {JSX.Element} Quiz component that displays a list of pets to choose from for a quiz.
+ */
 const Quiz = () => {
   const router = useRouter();
 
