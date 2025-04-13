@@ -65,6 +65,10 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
   };
 
 
+  /**
+   * Constructs a detailed query string based on the selected answers for fetching pets.
+   * Output: string: A URL query string formatted for route.ts (e.g., "size=large&age=adult&breed=Labrador,Retriever").
+   */
   const buildQueryFromAnswers = () => {
     const query = {};
     let breedSet = new Set();
@@ -81,7 +85,9 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
 
     //If the question is a standard field, it handles the query accordingly
     const handleStandardField = (q, key, answer) => {
+      // Check if the question allows multiple answers
       if (q.multiple) {
+        // If the key doesn't exist in the query object yet, initialize it as an empty array
          if (!query[key]) query[key] = [];
          const valuesToAdd = Array.isArray(answer) ? answer : [answer];
          query[key].push(...valuesToAdd);
