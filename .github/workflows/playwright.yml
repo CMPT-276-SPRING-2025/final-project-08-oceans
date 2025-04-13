@@ -14,7 +14,7 @@ jobs:
   playwright-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -31,4 +31,12 @@ jobs:
       run: bun x playwright install --with-deps
 
     - name: Run Playwright tests
-      run: bun x playwright test
+      run: xvfb-run bun x playwright test --grep @UI
+
+    - name: Upload Playwright Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report-ui
+        path: playwright-report/
+        retention-days: 30

@@ -14,7 +14,15 @@ import careLevelMappings from '@/app/pets/Quiz_Breed_questions/care-Level-Generi
 import interactionMappings from '@/app/pets/Quiz_Breed_questions/Interaction-Level-Generic.json';
 import hypoallergenicCatBreeds from '@/app/pets/Quiz_Breed_questions/Hypoallergenic-Cat-breeds.json';
 
-
+/**
+ * Renders a quiz interface for pet selection.
+ * Gives recommended pets based on their preferences.
+ * @param {object} props - The component props
+ * @param {Array<object>} props.questions - An array of question objects for the quiz
+ * @param {string} props.type - The type of pet the quiz is for
+ * @param {boolean} props.isLetUsDecide - Flag indicating if the quiz should determine the pet type based on answers.
+ * @returns {React.ReactElement} The rendered quiz component.
+ */
 const QuizComponent = ({ questions, type, isLetUsDecide }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState(Array(questions.length).fill(null));
