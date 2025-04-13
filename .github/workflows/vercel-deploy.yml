@@ -1,26 +1,23 @@
 name: Deploy to Vercel (Manual CLI)
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Unit Tests", "Playwright Tests"]
+    types:
+      - completed
     branches:
       - main
-
-concurrency:
-  group: deploy-${{ github.ref }} # Concurrency per branch is often safer
-  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Set environment variables for Vercel CLI
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment:
-      # If you have a GitHub Environment set up for secrets, specify it here.
-      # Otherwise, you can remove this line.
-      name: production # Optional: Example environment name
+      name: production
     env:
       VERCEL_ORG_ID: ${{ secrets.ORGID }}
       VERCEL_PROJECT_ID: ${{ secrets.PROJECTID }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} # Pass token as env var
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
     steps:
       - name: Checkout code
@@ -36,26 +33,13 @@ jobs:
         run: npm ci
 
       - name: Install Vercel CLI
-        run: npm install -g vercel@latest # Install the latest CLI globally
+        run: npm install -g vercel@latest
 
       - name: Pull Vercel Environment Information
-        # This links the project directory to your Vercel project/org.
-        # It uses the VERCEL_ORG_ID and VERCEL_PROJECT_ID env vars.
-        # It's often needed before deploying if the .vercel directory isn't committed.
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
-        # Add your build command here (e.g., npm run build)
-        # Vercel CLI's deploy command can sometimes build automatically,
-        # but explicitly building first is often more reliable in CI.
-        run: npm run build # Replace with your actual build command if needed
+        run: npm run build
 
       - name: Deploy Project Artifacts to Vercel
-        # Use the globally installed CLI.
-        # It will automatically use VERCEL_ORG_ID, VERCEL_PROJECT_ID, VERCEL_TOKEN from env.
-        # --prod flag promotes the deployment to production.
-        # --yes skips interactive prompts.
         run: vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
-        # Optional: If your build step produces a specific directory (e.g., 'dist', '.output'),
-        # you might deploy directly from there:
-        # run: vercel deploy ./dist --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
