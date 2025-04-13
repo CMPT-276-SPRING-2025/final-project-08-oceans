@@ -1,0 +1,19 @@
+name: Master test and deploy
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    unit-testing:
+        uses: ./.github/workflows/unit-test.yml
+    
+    integration-testing:
+        uses: ./.github/workflows/playwright.yml
+    
+    deploy:
+        needs: [integration-testing, unit-testing]
+        if: ${{ success() }}
+        uses: ./.github/workflows/vercel-deploy.yml
