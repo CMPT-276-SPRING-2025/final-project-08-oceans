@@ -31,7 +31,7 @@ jobs:
       run: bun x playwright install --with-deps
 
     - name: Run Playwright tests
-      run: xvfb-run bun x playwright test --grep @UI
+      run: xvfb-run bun x playwright test
 
     - name: Upload Playwright Report
       uses: actions/upload-artifact@v4
