@@ -166,6 +166,7 @@ export async function GET(request: Request) {
               next: { revalidate: 3600 }
           });
 
+          // Check if the response is ok
           if (!response.ok) {
           } else {
               const data: PetfinderResponse = await response.json();
@@ -173,6 +174,8 @@ export async function GET(request: Request) {
               pagination = data.pagination;
           }
       }
+
+      // Handle small pets and rabbits separately
       else if (type === 'small-pets') {
         let smallFurryAnimals: PetfinderPet[] = [];
         let rabbitAnimals: PetfinderPet[] = [];
@@ -214,6 +217,7 @@ export async function GET(request: Request) {
           queryParamsRabbit.append('sort', 'distance');
         }
 
+        // Fetches rabbits from the Petfinder API
         const responseRabbit = await fetch(`https://api.petfinder.com/v2/animals?${queryParamsRabbit.toString()}`, {
           headers: { Authorization: `Bearer ${token}` },
           next: { revalidate: 3600 } // Cache for an hour
@@ -226,16 +230,19 @@ export async function GET(request: Request) {
         }
 
 
+        // If location is provided, sort the animals by distance
         if (location){
           // Merge the two sorted arrays
           animals = [];
           let smallFurryIndex = 0;
           let rabbitIndex = 0;
 
+          // While there are elements in both arrays, compare distances and add the smaller one to the result
           while (smallFurryIndex < smallFurryAnimals.length && rabbitIndex < rabbitAnimals.length) {
             const distanceA = smallFurryAnimals[smallFurryIndex].distance === undefined ? Number.MAX_VALUE : smallFurryAnimals[smallFurryIndex].distance;
             const distanceB = rabbitAnimals[rabbitIndex].distance === undefined ? Number.MAX_VALUE : rabbitAnimals[rabbitIndex].distance;
 
+            // Compare distances and add the smaller one to the result
             if (distanceA <= distanceB) {
               animals.push(smallFurryAnimals[smallFurryIndex]);
               smallFurryIndex++;
@@ -263,6 +270,7 @@ export async function GET(request: Request) {
           let smallFurryIndex = 0;
           let rabbitIndex = 0;
 
+          // While there are elements in both arrays, randomly add one to the result
           while (smallFurryIndex < smallFurryAnimals.length || rabbitIndex < rabbitAnimals.length) {
             if (Math.random() < 0.5 && smallFurryIndex < smallFurryAnimals.length) {
               animals.push(smallFurryAnimals[smallFurryIndex]);
@@ -291,6 +299,7 @@ export async function GET(request: Request) {
         queryParams.append('page', page);
         queryParams.append('limit', limit);
 
+        // Add location if provided
         if (location){
           queryParams.append('location', location);
           queryParams.append('sort', 'distance');
@@ -356,7 +365,7 @@ export async function GET(request: Request) {
   }
 }
 
-// Fallback sample data when API fails - uses public URLs instead of local assets
+// Fallback sample data when API fails
 function getSamplePets(filterType?: string | null): SimplifiedPet[] {
   const samplePets: SimplifiedPet[] = [
     {

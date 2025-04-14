@@ -114,8 +114,10 @@ type SimplifiedShelter = {
 /**
  * Fetches an access token for the Petfinder API.
  * @returns {Promise<string>} - A promise that resolves to the access token string.
- */
+*/
 async function getPetfinderToken(): Promise<string> {
+
+  // Check if the Petfinder API key and secret are available
   const response = await fetch('https://api.petfinder.com/v2/oauth2/token', {
     method: 'POST',
     headers: {
@@ -308,6 +310,7 @@ function formatHours(hours: PetfinderOrganizationHours | null): string {
   const uniqueWeekdayHours = new Set(weekdayHours.filter(Boolean));
   const uniqueWeekendHours = new Set(weekendHours.filter(Boolean));
   
+  // Check if weekdays and weekends have the same hours
   if (uniqueWeekdayHours.size === 1 && uniqueWeekendHours.size === 1) {
     const weekdayValue = uniqueWeekdayHours.values().next().value;
     const weekendValue = uniqueWeekendHours.values().next().value;

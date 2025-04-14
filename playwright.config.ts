@@ -80,6 +80,11 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
     stderr: 'pipe',
+    env: {
+      PETFINDER_KEY: process.env.PETFINDER_KEY || '',
+      PETFINDER_SECRET: process.env.PETFINDER_SECRET || '',
+      MAPBOX_KEY: process.env.MAPBOX_KEY || '',
+    }
   },
   
   /* Set a global timeout for all tests */
