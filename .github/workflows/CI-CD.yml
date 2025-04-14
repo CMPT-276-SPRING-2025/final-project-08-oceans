@@ -12,6 +12,7 @@ jobs:
     
     integration-testing:
         uses: ./.github/workflows/playwright.yml
+        secrets: inherit
     
     deploy:
         needs: [integration-testing, unit-testing]
