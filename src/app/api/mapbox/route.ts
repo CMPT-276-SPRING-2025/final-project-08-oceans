@@ -45,7 +45,10 @@ export async function GET(request: NextRequest) {
   try {
 
     switch (action) {
+
       case 'geocode': {
+
+        // Check if the address parameter is provided
         const address = searchParams.get('address');
         if (!address) {
           return NextResponse.json(
@@ -60,6 +63,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(cachedResult);
         }
         
+        // Geocode the address using the Mapbox API
         const result = await geocodeAddress(address);
         mapboxCache.set(`geocode:${address}`, result);
         return NextResponse.json(result);
@@ -118,6 +122,7 @@ export async function GET(request: NextRequest) {
         const markerColor = searchParams.get('markerColor') || 'f97316';
         const markerSize = searchParams.get('markerSize') || 'm';
 
+        // Check if the longitude and latitude parameters are provided
         if (!lonStr || !latStr) {
           return NextResponse.json(
             { error: 'Longitude and latitude parameters are required' },
@@ -125,12 +130,14 @@ export async function GET(request: NextRequest) {
           );
         }
 
+        // Parse the parameters and validate them
         const lon = parseFloat(lonStr);
         const lat = parseFloat(latStr);
         const zoom = parseInt(zoomStr, 10);
         const width = parseInt(widthStr, 10);
         const height = parseInt(heightStr, 10);
 
+        // Check if the parameters are valid numbers
         if (isNaN(lon) || isNaN(lat) || isNaN(zoom) || isNaN(width) || isNaN(height)) {
           return NextResponse.json(
             { error: 'Invalid parameters' },
@@ -138,6 +145,7 @@ export async function GET(request: NextRequest) {
           );
         }
 
+        // Check if the static map URL is already cached, if so, return it
         const cacheKey = `staticmap:${lon}:${lat}:${zoom}:${width}:${height}:${markerSize}:${markerColor}`;
         const cachedResult = mapboxCache.get(cacheKey);
         if (cachedResult) {
@@ -153,6 +161,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(result);
       }
 
+      // Handle other actions or invalid action
       default:
         return NextResponse.json({
           mapboxKey: process.env.MAPBOX_KEY,
@@ -181,6 +190,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Check if the request body is valid JSON
   try {
     const body = await request.json();
     const action = body.action;
@@ -189,6 +199,7 @@ export async function POST(request: NextRequest) {
       case 'geocode': {
         const { addresses } = body as GeocodeRequest;
         
+        // Check if the addresses parameter is provided and is an array
         if (!addresses || !Array.isArray(addresses) || addresses.length === 0) {
           return NextResponse.json(
             { error: 'Valid addresses array is required' },
@@ -234,11 +245,13 @@ export async function POST(request: NextRequest) {
           );
         }
         
+        // Check if the navigation request is already cached
         const cachedResult = mapboxCache.get(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`);
         if (cachedResult) {
           return NextResponse.json(cachedResult);
         }
         
+        // Caches the result
         const result = await getDirections(origin, destination, mode, waypoints);
         mapboxCache.set(`navigation:${origin}:${destination}:${mode}:${waypoints.join('|')}`, result);
         return NextResponse.json(result);
@@ -272,6 +285,7 @@ async function geocodeAddress(address: string) {
 
   const response = await fetch(url);
   
+  // Check if the response is OK
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(`Geocoding error: ${response.statusText}`);
@@ -311,12 +325,16 @@ async function getDirections(
   // Geocode origin or parse coords
   if (originCoordsParam) {
     const [lng, lat] = originCoordsParam.split(',').map(Number);
+
+    // Check if the coordinates are valid numbers
     if (!isNaN(lng) && !isNaN(lat)) {
       originPoint = [lng, lat];
     } else {
        throw new Error('Invalid origin coordinates format. Expected "longitude,latitude".');
     }
   } else {
+
+    // If originName is provided, use it as the final origin name
     const originGeocodeResult = await geocodeAddress(origin);
     originPoint = originGeocodeResult.features[0]?.coordinates;
     if (!originPoint) throw new Error(`Could not geocode origin address: ${origin}`);
