@@ -18,3 +18,4 @@ jobs:
         needs: [integration-testing, unit-testing]
         if: ${{ success() }}
         uses: ./.github/workflows/vercel-deploy.yml
+        secrets: inherit
