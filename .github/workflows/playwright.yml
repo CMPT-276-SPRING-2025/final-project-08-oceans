@@ -29,9 +29,9 @@ jobs:
     
     - name: update environmental variables to local
       run: |
-        echo "PETFINDER_KEY: ${{ secrets.PETFINDER_KEY }}" >> .env.local
-        echo "PETFINDER_SECRET: ${{ secrets.PETFINDER_SECRET }}" >> .env.local 
-        echo "MAPBOX_KEY: ${{ secrets.MAPBOX_KEY }}" >> .env.local
+          echo "PETFINDER_KEY=$PETFINDER_KEY" >> .env.local
+          echo "PETFINDER_SECRET=$PETFINDER_SECRET" >> .env.local
+          echo "MAPBOX_KEY=$MAPBOX_KEY" >> .env.local
       shell: bash
 
     - name: Install Playwright browsers
