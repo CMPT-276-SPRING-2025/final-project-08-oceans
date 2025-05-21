@@ -191,7 +191,8 @@ const Shelters = () => {
     
 
   return (
-    <div className="w-full mx-auto p-20 pt-[100px] 2xl:pt-[150px]">
+    <div className="w-full mx-auto px-6 sm:px-10 md:px-12 pt-28 pb-12">
+
       <LoadingBar 
         isLoading={loading || isNavigating} 
         message={loadingMessage}
@@ -227,7 +228,7 @@ const Shelters = () => {
 
       {/* Interactive Map */}
       <div 
-        className="w-full h-96 bg-gray-200 rounded-lg mt-6 overflow-hidden shadow-lg"
+       className="w-full h-60 sm:h-72 md:h-80 lg:h-96 bg-gray-200 rounded-lg mt-6 overflow-hidden shadow-lg"
         >
         {!loading && shelters.length > 0 ? (
           <ShelterMap 

@@ -27,7 +27,7 @@ const Quiz = () => {
   };
 
   return (
-    <div className="w-full flex flex-col justify-center items-center bg-orange-50 min-h-screen py-10"> 
+    <div className="w-full flex flex-col justify-center items-center bg-orange-50 min-h-screen py-10 pt-20">
       <h2 className="text-2xl font-semibold mb-10 px-4 text-center">Choose your desired pet to take a quiz!</h2> 
 
       <div className="w-full max-w-6xl px-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 auto-rows-min">

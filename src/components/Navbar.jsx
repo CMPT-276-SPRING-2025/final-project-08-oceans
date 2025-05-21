@@ -15,14 +15,13 @@ const Navbar = () => {
         {/* Logo */}
         <div className="flex items-center">
           <a href="/">
-            <Image 
-              src={assets.icon_paw} 
-              alt="Paw" 
-              width={32}
-              height={32}
-              priority
-              style={{ width: 'auto', height: 'auto' }}
-            />
+          <Image 
+                src={assets.icon_paw} 
+                alt="Paw" 
+                width={32}
+                height={32}
+                priority
+                />
           </a>
         </div>
 
