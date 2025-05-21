@@ -28,9 +28,11 @@ const Quiz = () => {
 
   return (
     <div className="w-full flex flex-col justify-center items-center bg-orange-50 min-h-screen py-10 pt-20">
-      <h2 className="text-2xl font-semibold mb-10 px-4 text-center">Choose your desired pet to take a quiz!</h2> 
+      <h2 className="text-2xl font-semibold mb-4 sm:mb-10 px-4 text-center">
+        Choose your desired pet to take a quiz!
+      </h2>
 
-      <div className="w-full max-w-6xl px-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 auto-rows-min">
+      <div className="w-full max-w-6xl px-6 sm:px-8 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 auto-rows-min">
         {pets.map((pet, index) => {
           const isWideCard = pet.name === "or.....Let us decide!";
           return (
@@ -38,20 +40,23 @@ const Quiz = () => {
               key={index}
               className={`cursor-pointer shadow-md hover:shadow-2xl hover:bg-orange-300 hover:translate-y-[-8px] transition duration-300 bg-orange-100
                  text-center rounded-xl flex flex-col overflow-hidden
-                ${isWideCard ? "h-48 md:h-56 md:col-span-2" : "h-48 md:h-56 w-full"}`} 
+                ${isWideCard ? "h-40 md:h-56 md:col-span-2" : "h-40 md:h-56 w-full"}`} 
               onClick={() => handleClick(pet.path)}
             >
               <CardContent className="text-lg md:text-xl pt-10 flex-shrink-0 font-semibold">
                 {pet.name}
               </CardContent>
-              <div className="flex-grow flex items-end justify-center mt-auto min-h-0">
+              <div className="flex-grow flex items-end justify-center mt-auto">
               <Image
                 src={pet.image}
                 alt={pet.name}
-                className="object-contain"
-                style={{ width: isWideCard ? '450px' : '100px', height: 'auto' }}
+                className={`object-contain ${isWideCard ? 'w-full' : 'w-16 sm:w-20 md:w-24'} max-h-20 md:max-h-28`}
+                height={0}
+                width={0}
               />
+
               </div>
+
             </Card>
           );
         })}
