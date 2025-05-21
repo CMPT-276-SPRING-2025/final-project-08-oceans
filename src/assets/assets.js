@@ -20,6 +20,8 @@ import email from './email.png';
 import link from './link.png';
 import location from './location.png';
 import phone from './phone.png';
+import menu from './menu-black.png';
+import close from './close-black.png';
 
 export const assets = {
     phone,
@@ -44,4 +46,6 @@ export const assets = {
     reptile,
     smallpets,
     generalpets,
+    menu,
+    close,
 };
