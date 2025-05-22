@@ -191,7 +191,7 @@ const Shelters = () => {
     
 
   return (
-    <div className="w-full mx-auto px-6 sm:px-10 md:px-12 pt-28 pb-12">
+    <div className="w-full mx-auto px-6 sm:px-10 md:px-12 pt-20 sm:pt-28 pb-12">
 
       <LoadingBar 
         isLoading={loading || isNavigating} 
@@ -201,7 +201,7 @@ const Shelters = () => {
       
       {/* Search Section */}
       <div className="flex flex-col items-center gap-6">
-        <h2 className="text-2xl font-semibold">Search nearby pet shelters</h2>
+      <h2 className="text-xl sm:text-2xl font-semibold">Search nearby pet shelters</h2>
         <div className="flex w-full max-w-2xl gap-3">
             {/* By location search */}
             <LocationSearchInput
@@ -213,7 +213,7 @@ const Shelters = () => {
           {/* By shelter name search */}
           <Input 
             placeholder="Shelter name" 
-            className="flex-1 bg-white border border-orange-400 hover:border-2"
+            className="flex-1 bg-white border border-orange-400 sm:text-lg hover:border-2"
             value={nameSearch}
             onChange={(e) => setNameSearch(e.target.value)}
           />
@@ -243,7 +243,7 @@ const Shelters = () => {
       </div>
 
       {/* Results Section */}
-      <h3 className="text-center text-xl font-semibold mt-8">Here are the results:</h3>
+      <h3 className="text-center text-base sm:text-xl font-semibold mt-4">Here are the results:</h3>
       
       {/* Loading and Error States */}
       {loading ? (
@@ -255,7 +255,7 @@ const Shelters = () => {
       ) : shelters.length === 0 ? (
         <div className="text-center py-10">No shelters found. Try a different search.</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mt-4">
           {shelters.map((shelter) => (
             <div 
               key={shelter.id}

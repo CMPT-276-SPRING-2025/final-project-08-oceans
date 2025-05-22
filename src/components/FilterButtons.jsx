@@ -55,7 +55,7 @@ const FilterButtons = () => {
   return (
     <div className="flex flex-col items-center gap-2 mb-8">
       {/* Filter Buttons */}
-      <div className="flex justify-start gap-2 flex-wrap">
+      <div className="flex justify-center gap-2 flex-wrap pb-1">
         <button
           className={`px-4 py-2 rounded-full ${currentType === 'all' || !currentType ? 'bg-[#F26A21] text-white' : 'bg-[#FEF6EC] text-gray-800'}`}
           onClick={() => handleFilterClick('all')}
@@ -101,19 +101,21 @@ const FilterButtons = () => {
       </div>
 
       {/* Location Search Input */}
-      <div className="flex items-center justify-center">
-        <LocationSearchInput
-          value={tempLocation}
-          onChange={handleLocationInputChange}
-          className={"w-[450px]"}
-        />
-        <Button
-          className="ml-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline"
-          onClick={handleSearch}
-        >
-          Search
-        </Button>
-      </div>
+      <div className="flex flex-row items-center gap-2 w-full px-2 max-w-md pt-2">
+      <LocationSearchInput
+        value={tempLocation}
+        onChange={handleLocationInputChange}
+        className="flex-grow"
+      />
+      <Button
+        className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full"
+        onClick={handleSearch}
+      >
+        Search
+      </Button>
+    </div>
+
+
     </div>
   );
 };

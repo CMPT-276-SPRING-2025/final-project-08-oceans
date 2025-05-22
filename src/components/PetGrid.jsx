@@ -10,7 +10,8 @@ const PetGrid = ({ pets, goToDetailPage}) => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2 sm:px-0">
+
       {pets.map((pet) => {
         if (!pet || !pet.id) {
           return null;
@@ -29,9 +30,12 @@ const PetGrid = ({ pets, goToDetailPage}) => {
         const imageSrc = pet.photos[0].medium;
         
         return (
-          <div key={pet.id} className="rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition duration-600 bg-orange-50">
-            <div className="p-4 flex flex-col items-center">
-              <div className="relative h-40 w-full mb-3 flex justify-center mt-4">
+          <div
+            key={pet.id}
+            className="rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition duration-600 bg-orange-50 w-[75%] sm:w-full mx-auto"
+          >
+            <div className="p-3 sm:p-4 flex flex-col items-center">
+              <div className="relative h-32 sm:h-40 w-full mb-3 flex justify-center mt-3">
                 <img
                   src={imageSrc}
                   alt={pet.name || 'Pet'}
@@ -40,13 +44,14 @@ const PetGrid = ({ pets, goToDetailPage}) => {
                   className="h-full object-cover rounded-lg"
                 />
               </div>
-              <h3 className="text-xl font-semibold text-center">{pet.name}</h3>
-              <div className="mt-2 text-center text-gray-600">
+              <h3 className="text-base sm:text-xl font-semibold text-center">{pet.name}</h3>
+              <div className="mt-2 text-center text-gray-600 text-sm sm:text-base">
                 <p>{pet.breed}</p>
                 <p>{pet.age} • {pet.gender}</p>
               </div>
+
                 <button 
-                  className="mt-4 px-4 py-2 bg-[#F26A21] text-white rounded-full hover:bg-orange-600 transition"
+                className="mt-3 px-3 py-1.5 text-sm sm:text-base bg-[#F26A21] text-white rounded-full hover:bg-orange-600 transition"
                   onClick={() => goToDetailPage(pet.id)}
                 >
                   Adopt me!

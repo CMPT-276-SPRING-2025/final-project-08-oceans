@@ -157,14 +157,15 @@ const AllPetsPageClient = () => {
   }
 
   return (
-    <div className="pt-[10vh] pb-24 w-full max-w-screen-xl mx-auto px-4">
+    <div className="pt-16 sm:pt-20 pb-24 w-full max-w-screen-xl mx-auto px-4">
       <LoadingBar 
         isLoading={loading}
         message={loading ? "Loading Pets..." : ""}
       />
-      <h1 className="text-3xl font-bold text-center my-8">
+      <h1 className="text-xl sm:text-3xl font-bold text-center my-6 sm:my-8">
         {pageTitle}
       </h1>
+
       
       <FilterButtons activeType={type || 'all'} />
       

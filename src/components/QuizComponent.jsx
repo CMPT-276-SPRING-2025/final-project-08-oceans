@@ -397,12 +397,12 @@ const QuizComponent = ({ questions, type, isLetUsDecide }) => {
   return (
     <>
       <LoadingBar isLoading={loading} message="Finding your perfect match..." />
-      <div className={`flex justify-center gap-50 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
-        <div className="w-1/2 flex justify-center items-center">
+      <div className={`flex flex-col md:flex-row justify-center items-center gap-6 px-4 md:px-20 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className="hidden md:flex w-full md:w-1/2 justify-center items-center">
           <Image src={question.image} alt="Pet" className="w-100 h-100 object-contain" />
         </div>
 
-        <div className="w-[800px] h-[500px] max-w-2xl bg-orange-100 p-10 rounded-xl shadow-md text-center">
+        <div className="w-full md:w-[800px] h-auto bg-orange-100 p-6 md:p-10 rounded-xl shadow-md text-center">
           <h2 className="text-2xl font-semibold mb-6 mt-3">{question.question}</h2>
           <p className="text-lg text-gray-600 text-left mb-6">
             Question {currentQuestion + 1} out of {questions.length}

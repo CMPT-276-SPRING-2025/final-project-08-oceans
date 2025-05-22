@@ -28,9 +28,10 @@ const Quiz = () => {
 
   return (
     <div className="w-full flex flex-col justify-center items-center bg-orange-50 min-h-screen py-10 pt-20">
-      <h2 className="text-2xl font-semibold mb-4 sm:mb-10 px-4 text-center">
+      <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-10 px-4 text-center">
         Choose your desired pet to take a quiz!
       </h2>
+
 
       <div className="w-full max-w-6xl px-6 sm:px-8 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 auto-rows-min">
         {pets.map((pet, index) => {
