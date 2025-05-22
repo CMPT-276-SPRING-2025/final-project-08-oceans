@@ -4,11 +4,11 @@ import { assets } from "@/assets/assets";
 
 const Footer = () => {
   return (
-    <footer className="bg-[#FDE7CB] py-8 bottom-0 left-0 right-0 z-50">
-      <div className="container mx-auto px-6 h-auto">
+    <footer className="bg-[#FDE7CB] sm:py-8 bottom-0 left-0 right-0 z-50">
+      <div className="container mx-auto px-4 sm:px-6">
         <div className="flex flex-col md:flex-row lg:mt-[-20px]">
           {/* Left - Paw Icon */}
-          <div className="mb-4 md:mb-0 mt-10 mr-100">
+          <div className="mb-4 md:mb-0 mt-4 mr-100">
             <a href="/" className="flex items-center">
               <Image 
               src={assets.icon_paw} 
@@ -56,7 +56,7 @@ const Footer = () => {
             {/* Social Section */}
             <div className="text-center md:text-left lg:mb-[10px]">
               <h3 className="font-bold">Social</h3>
-              <div className="mt-[5px] flex space-x-4 justify-center md:justify-start mb-10">
+              <div className="mt-[5px] flex space-x-4 justify-center md:justify-start ">
               <a
                 href="https://instagram.com"
                 target="_blank"
@@ -78,10 +78,10 @@ const Footer = () => {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-black my-6 lg:mt-[5px]"></div>
+        <div className="border-t border-black my-4"></div>
 
         {/* Copyright */}
-        <div className="text-center text-black text-sm lg:mt-[-10px]">
+        <div className="text-center text-black text-xs sm:text-sm pb-2">
           Copyright © LoveAtFirstPaw 2025
         </div>
       </div>
