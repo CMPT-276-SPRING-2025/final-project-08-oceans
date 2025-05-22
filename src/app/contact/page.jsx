@@ -31,9 +31,11 @@ const ContactPage = () => {
   };
   
   return (
-    <div className="flex flex-col justify-center items-center 3xl:pt-[280px] lg:pt-[130px] pb-20 min-h-screen">
+    <div className="flex flex-col justify-center items-center pt-16 sm:pt-0 lg:pt-[130px] 3xl:pt-[280px] pb-20 min-h-screen">
+
       {/* Centered Form Container */}
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl bg-[#FDE7CB] p-6 md:p-8 rounded-2xl hover:shadow-xl transition duration-400">
+      <div className="w-[90%] max-w-md sm:max-w-lg md:max-w-xl bg-[#FDE7CB] p-4 sm:p-6 md:p-8 rounded-2xl hover:shadow-xl transition duration-400">
+
         <h2 className="text-center text-2xl md:text-3xl font-semibold mb-5">Send Us a Message!</h2>
 
         <form className="space-y-2" onSubmit={onSubmit}>
